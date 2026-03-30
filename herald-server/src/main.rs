@@ -2,6 +2,7 @@ mod auth;
 mod config;
 mod crypto;
 mod error;
+mod pages;
 mod queue;
 mod routes;
 mod state;
@@ -90,7 +91,8 @@ async fn main() {
             "/stream/{endpoint_name}",
             get(routes::websocket::websocket_handler),
         )
-        // Health check
+        // Landing page and health check
+        .route("/", get(pages::landing_page))
         .route("/health", get(health_check))
         .layer(TraceLayer::new_for_http())
         .with_state(state);
