@@ -2,9 +2,10 @@ FROM rust:1.85-slim AS builder
 
 WORKDIR /app
 COPY Cargo.toml Cargo.lock ./
-COPY src/ src/
+COPY herald-server/ herald-server/
+COPY herald-cli/ herald-cli/
 
-RUN cargo build --release
+RUN cargo build --release -p herald-server
 
 FROM debian:bookworm-slim
 
