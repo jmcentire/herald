@@ -1,7 +1,7 @@
 [package]
 name = "herald-server"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 license = "MIT"
 description = "Asynchronous webhook relay and message queue for AI agents"
 
