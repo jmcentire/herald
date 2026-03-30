@@ -1,0 +1,6 @@
+/target
+.constrain/
+.constrain_answers.txt
+*.swp
+*.swo
+.env

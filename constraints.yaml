@@ -1,0 +1,89 @@
+- id: C001
+  boundary: "Message delivery semantics"
+  condition: "All messages must be delivered at least once with FIFO ordering within endpoint"
+  violation: "Message loss or out-of-order delivery"
+  severity: must
+  rationale: "Core reliability guarantee for webhook relay"
+  classification_tier: null
+  affected_components: ["queue-manager", "agent-api", "storage-backend"]
+
+- id: C002
+  boundary: "Payload encryption"
+  condition: "All webhook payloads must be encrypted at rest within RAM visibility window"
+  violation: "Plaintext payload storage or extended RAM exposure"
+  severity: must
+  rationale: "Security requirement for sensitive webhook data"
+  classification_tier: PII
+  affected_components: ["encryption-service", "storage-backend"]
+
+- id: C003
+  boundary: "Rate limiting"
+  condition: "Free tier limited to 100 messages/day, Standard to 10K/day, Pro to 500K/day"
+  violation: "Tier limits exceeded without HTTP 429 response"
+  severity: must
+  rationale: "Business model enforcement and abuse prevention"
+  classification_tier: null
+  affected_components: ["api-gateway", "auth-service"]
+
+- id: C004
+  boundary: "Queue depth limits"
+  condition: "Queue depth must not exceed tier-specific limits"
+  violation: "Queue overflow causing message rejection"
+  severity: must
+  rationale: "Resource protection and service availability"
+  classification_tier: null
+  affected_components: ["queue-manager", "storage-backend"]
+
+- id: C005
+  boundary: "Message deduplication"
+  condition: "Identical payloads must be deduplicated using SHA-256 fingerprints within retention window"
+  violation: "Duplicate message delivery for identical content"
+  severity: must
+  rationale: "Prevent replay attacks and reduce storage overhead"
+  classification_tier: null
+  affected_components: ["encryption-service", "queue-manager"]
+
+- id: C006
+  boundary: "Authentication security"
+  condition: "API keys must not be transmitted in WebSocket query parameters"
+  violation: "API key exposure in connection logs or proxies"
+  severity: must
+  rationale: "Security best practices for credential transmission"
+  classification_tier: AUTH
+  affected_components: ["agent-api", "auth-service"]
+
+- id: C007
+  boundary: "BYOK key isolation"
+  condition: "Customer BYOK keys must never be logged or transmitted to Herald infrastructure"
+  violation: "Customer key exposure or Herald access to plaintext"
+  severity: must
+  rationale: "Zero-trust encryption model requirement"
+  classification_tier: AUTH
+  affected_components: ["encryption-service"]
+
+- id: C008
+  boundary: "Visibility timeout recovery"
+  condition: "Messages must be redelivered after visibility timeout expiration"
+  violation: "Lost messages due to agent crashes without recovery"
+  severity: must
+  rationale: "At-least-once delivery guarantee implementation"
+  classification_tier: null
+  affected_components: ["queue-manager", "agent-api"]
+
+- id: C009
+  boundary: "Dead letter queue"
+  condition: "Messages exceeding max retry threshold must move to DLQ"
+  violation: "Infinite retry loops or message loss"
+  severity: must
+  rationale: "System stability and message observability"
+  classification_tier: null
+  affected_components: ["queue-manager", "storage-backend"]
+
+- id: C010
+  boundary: "Payload content blindness"
+  condition: "Herald must never inspect, parse, or route based on payload contents"
+  violation: "Content-aware processing or routing logic"
+  severity: must
+  rationale: "Pure relay abstraction and security isolation"
+  classification_tier: null
+  affected_components: ["api-gateway", "queue-manager", "agent-api"]

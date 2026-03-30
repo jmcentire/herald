@@ -1,0 +1,82 @@
+version: "1.0"
+generated_by: constrain
+session_id: herald_relay_system
+
+trust:
+  floor: 0.10
+  authority_override_floor: 0.40
+  decay_lambda: 0.05
+  taint_lock_tiers: [PII, FINANCIAL, AUTH, COMPLIANCE]
+  conflict_trust_delta_threshold: 0.20
+
+classifications:
+  - field_pattern: "webhook_payload_body"
+    tier: PII
+    authoritative_component: "encryption-service"
+    canary_eligible: true
+    canary_pattern: "test_payload_*"
+    rationale: "Webhook payloads may contain user data from external providers"
+  - field_pattern: "webhook_headers"
+    tier: PII
+    authoritative_component: "encryption-service"
+    canary_eligible: true
+    canary_pattern: "test_header_*"
+    rationale: "Headers may contain authentication tokens or user identifiers"
+  - field_pattern: "api_key"
+    tier: AUTH
+    authoritative_component: "auth-service"
+    canary_eligible: false
+    canary_pattern: null
+    rationale: "API keys provide authentication and authorization"
+  - field_pattern: "user_credentials"
+    tier: AUTH
+    authoritative_component: "auth-service"
+    canary_eligible: false
+    canary_pattern: null
+    rationale: "User login credentials require highest security"
+  - field_pattern: "byok_key_reference"
+    tier: AUTH
+    authoritative_component: "encryption-service"
+    canary_eligible: false
+    canary_pattern: null
+    rationale: "Customer encryption key references are authentication material"
+  - field_pattern: "message_id"
+    tier: PUBLIC
+    authoritative_component: "queue-manager"
+    canary_eligible: true
+    canary_pattern: "test_msg_*"
+    rationale: "Message identifiers are non-sensitive metadata"
+  - field_pattern: "queue_state"
+    tier: PUBLIC
+    authoritative_component: "queue-manager"
+    canary_eligible: true
+    canary_pattern: "test_queue_*"
+    rationale: "Queue depth and ordering metadata is operational data"
+
+soak:
+  base_durations:
+    PUBLIC: 1h
+    PII: 6h
+    FINANCIAL: 24h
+    AUTH: 48h
+    COMPLIANCE: 72h
+  target_requests: 1000
+
+authority_map:
+  - component: "auth-service"
+    domains: ["user_credentials", "api_key", "authentication_state"]
+    rationale: "Owns all authentication and authorization data"
+  - component: "encryption-service"
+    domains: ["webhook_payload_body", "webhook_headers", "byok_key_reference", "encryption_state"]
+    rationale: "Owns all encrypted data and key management"
+  - component: "queue-manager"
+    domains: ["message_id", "queue_state", "delivery_state", "message_ordering"]
+    rationale: "Owns message lifecycle and delivery guarantees"
+
+human_gates:
+  always:
+    - tier: FINANCIAL
+    - tier: AUTH
+    - tier: COMPLIANCE
+  on_low_trust_authoritative: true
+  on_unresolvable_conflict: true

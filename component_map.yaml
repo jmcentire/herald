@@ -1,0 +1,107 @@
+version: "1.0"
+generated_by: constrain
+session_id: herald_relay_system
+
+components:
+  - name: "api-gateway"
+    description: "Handles webhook ingestion, rate limiting, and initial authentication"
+    type: ingress
+    port: 8080
+    protocol: http
+    data_access:
+      reads: [PUBLIC]
+      writes: [PII, PUBLIC]
+      rationale: "Receives webhook payloads and writes them for encryption"
+    authority:
+      domains: []
+      rationale: null
+    dependencies: ["auth-service", "encryption-service"]
+    constraints: ["C001", "C003", "C010"]
+
+  - name: "auth-service"
+    description: "Manages API keys, user credentials, and tier-based permissions"
+    type: service
+    port: 8081
+    protocol: http
+    data_access:
+      reads: [AUTH]
+      writes: [AUTH]
+      rationale: "Owns authentication and authorization data"
+    authority:
+      domains: ["user_credentials", "api_key", "authentication_state"]
+      rationale: "Authoritative source for all authentication data"
+    dependencies: ["storage-backend"]
+    constraints: ["C003", "C006", "C007"]
+
+  - name: "encryption-service"
+    description: "Encrypts webhook payloads and manages BYOK key references"
+    type: service
+    port: 8082
+    protocol: http
+    data_access:
+      reads: [PII, AUTH]
+      writes: [PII, AUTH]
+      rationale: "Encrypts sensitive payloads and manages encryption keys"
+    authority:
+      domains: ["webhook_payload_body", "webhook_headers", "byok_key_reference", "encryption_state"]
+      rationale: "Authoritative for encrypted data and key management"
+    dependencies: ["storage-backend"]
+    constraints: ["C002", "C005", "C007"]
+
+  - name: "queue-manager"
+    description: "Maintains FIFO ordering, visibility timeouts, and message lifecycle"
+    type: service
+    port: 8083
+    protocol: http
+    data_access:
+      reads: [PUBLIC, PII]
+      writes: [PUBLIC]
+      rationale: "Manages message ordering and delivery state"
+    authority:
+      domains: ["message_id", "queue_state", "delivery_state", "message_ordering"]
+      rationale: "Authoritative for message lifecycle and delivery guarantees"
+    dependencies: ["storage-backend"]
+    constraints: ["C001", "C004", "C005", "C008", "C009"]
+
+  - name: "storage-backend"
+    description: "Pluggable persistence layer supporting multiple storage engines"
+    type: service
+    port: null
+    protocol: tcp
+    data_access:
+      reads: [PUBLIC, PII, AUTH]
+      writes: [PUBLIC, PII, AUTH]
+      rationale: "Provides durable storage for all system data"
+    authority:
+      domains: []
+      rationale: null
+    dependencies: []
+    constraints: ["C002", "C004", "C009"]
+
+  - name: "agent-api"
+    description: "Serves agents via HTTP polling and WebSocket streaming"
+    type: egress
+    port: 8084
+    protocol: http
+    data_access:
+      reads: [PUBLIC, PII]
+      writes: [PUBLIC]
+      rationale: "Delivers encrypted messages to agents"
+    authority:
+      domains: []
+      rationale: null
+    dependencies: ["auth-service", "queue-manager", "encryption-service"]
+    constraints: ["C001", "C006", "C008", "C010"]
+
+  - name: "cli-daemon"
+    description: "Local herald-cli daemon for executing webhook handlers"
+    type: worker
+    port: null
+    protocol: http
+    data_access:
+      reads: [PII]
+      writes: [PUBLIC]
+      rationale: "Processes delivered messages and sends ACK/NACK responses"
+    authority:
+      domains: []
+      rationale: null
