@@ -8,6 +8,13 @@ pub struct Config {
     /// If set, POST /register requires this as a Bearer token.
     /// Unset = open registration (hosted service behavior).
     pub register_secret: Option<String>,
+    /// Stripe API key for billing. Unset = billing disabled.
+    /// Read from STRIPE_API_KEY env var. Never logged or serialized.
+    pub stripe_api_key: Option<String>,
+    /// Stripe webhook signing secret. Required for webhook verification.
+    pub stripe_webhook_secret: Option<String>,
+    /// Base URL for Stripe checkout success/cancel redirects.
+    pub base_url: String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -106,11 +113,23 @@ impl Config {
         let register_secret = std::env::var("HERALD_REGISTER_SECRET").ok()
             .filter(|s| !s.is_empty());
 
+        let stripe_api_key = std::env::var("STRIPE_API_KEY").ok()
+            .filter(|s| !s.is_empty());
+
+        let stripe_webhook_secret = std::env::var("STRIPE_WEBHOOK_SECRET").ok()
+            .filter(|s| !s.is_empty());
+
+        let base_url = std::env::var("HERALD_BASE_URL")
+            .unwrap_or_else(|_| "https://proxy.herald.tools".to_string());
+
         Config {
             redis_url,
             listen_addr,
             service_encryption_key,
             register_secret,
+            stripe_api_key,
+            stripe_webhook_secret,
+            base_url,
         }
     }
 }

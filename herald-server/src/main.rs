@@ -1,4 +1,5 @@
 mod auth;
+mod billing;
 mod config;
 mod crypto;
 mod error;
@@ -65,6 +66,10 @@ async fn main() {
     let app = Router::new()
         // Account registration (no auth — returns API key)
         .route("/register", post(routes::register::register))
+        // Billing and tier management
+        .route("/account/billing", get(billing::get_billing))
+        .route("/account/tier", post(billing::set_tier))
+        .route("/stripe/webhook", post(billing::stripe_webhook))
         // Inbound webhook ingestion (no auth — providers POST freely)
         .route(
             "/{customer_id}/{endpoint_name}",
