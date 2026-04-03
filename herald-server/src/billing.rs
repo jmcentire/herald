@@ -23,9 +23,10 @@ use crate::state::AppState;
 // Stripe Price Constants (created via API, live in Stripe)
 // =============================================================================
 
-pub const PRICE_STANDARD: &str = "price_1THymqCfzH6JBjFk4ZcJO4R7"; // $9/mo
-pub const PRICE_PRO: &str = "price_1THymrCfzH6JBjFk1BiyUimn"; // $29/mo
-pub const PRICE_ENTERPRISE: &str = "price_1THymrCfzH6JBjFkos60xh8L"; // $99/mo
+// New dedicated Herald Stripe account (separate from personal)
+pub const PRICE_STANDARD: &str = "price_1THyznBWDEkTlwUGAizP6VIB"; // $9/mo
+pub const PRICE_PRO: &str = "price_1THyzoBWDEkTlwUGsbVMwX1u"; // $29/mo
+pub const PRICE_ENTERPRISE: &str = "price_1THyzoBWDEkTlwUGCoBk8JgK"; // $99/mo
 
 fn tier_to_price(tier: &str) -> Option<&'static str> {
     match tier {
