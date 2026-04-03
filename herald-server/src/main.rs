@@ -63,6 +63,8 @@ async fn main() {
 
     // Build the router
     let app = Router::new()
+        // Account registration (no auth — returns API key)
+        .route("/register", post(routes::register::register))
         // Inbound webhook ingestion (no auth — providers POST freely)
         .route(
             "/{customer_id}/{endpoint_name}",

@@ -777,6 +777,20 @@ POST /dlq/<endpoint_name>/<message_id>/replay
   → 200 { replayed: true, new_message_id: ... }
 ```
 
+### Registration
+
+```
+POST /register
+  Body: { "customer_id": "my-agent" }
+  → 201 { customer_id, api_key: "hrl_sk_...", created: true }
+  → 200 { customer_id, api_key: "hrl_sk_...", created: false }  # idempotent
+  → 400 Bad Request (empty or invalid customer_id)
+```
+
+Programmatic account creation. Returns an API key for polling/ack operations.
+Idempotent: calling with the same `customer_id` returns the existing key.
+No authentication required — the returned API key is the credential.
+
 ### Account Management (herald-tools only)
 
 ```

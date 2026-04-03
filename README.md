@@ -21,16 +21,22 @@ GitHub/Stripe/etc.  ──POST──▶  Herald  ◀──poll/ws──  Your Ag
 ## Quick start
 
 ```bash
-# Send a webhook
+# 1. Register and get an API key
+curl -X POST https://proxy.herald.tools/register \
+  -H "Content-Type: application/json" \
+  -d '{"customer_id":"myagent"}'
+# → {"customer_id":"myagent","api_key":"hrl_sk_...","created":true}
+
+# 2. Send a webhook (no auth needed — this is the URL you give to providers)
 curl -X POST https://proxy.herald.tools/myagent/github \
   -H "Content-Type: application/json" \
   -d '{"action":"push","ref":"refs/heads/main"}'
 
-# Poll for messages
+# 3. Poll for messages (auth required)
 curl -H "Authorization: Bearer $API_KEY" \
   https://proxy.herald.tools/queue/github
 
-# Acknowledge
+# 4. Acknowledge processed messages
 curl -X POST -H "Authorization: Bearer $API_KEY" \
   https://proxy.herald.tools/ack/github/<message_id>
 ```
