@@ -90,11 +90,19 @@ pub async fn ingest_webhook(
     // Compute unique message ID
     let message_id = crypto::message_id(&endpoint, received_at, &body);
 
-    // C002: Encrypt body before storage
-    let encrypted_body =
-        crypto::encrypt(&state.config.service_encryption_key, &body)?;
+    // Load per-customer config (encryption mode, retention override)
+    let customer_config = auth::load_customer_config(&mut conn, &customer_id).await?;
 
-    // Encrypt headers (service key, even under BYOK — spec decision)
+    // C002: Encrypt body based on customer config
+    let (stored_body, encryption_label) = match customer_config.encryption {
+        auth::EncryptionMode::Service => (
+            crypto::encrypt(&state.config.service_encryption_key, &body)?,
+            "service",
+        ),
+        auth::EncryptionMode::None => (body.to_vec(), "none"),
+    };
+
+    // Encrypt headers (always service key — headers may contain auth tokens)
     let headers_json = serialize_headers(&headers);
     let encrypted_headers =
         crypto::encrypt(&state.config.service_encryption_key, headers_json.as_bytes())?;
@@ -106,14 +114,15 @@ pub async fn ingest_webhook(
         fingerprint: fp.clone(),
         endpoint: endpoint_name.clone(),
         headers: Some(headers_b64),
-        body: encrypted_body,
-        encryption: "service".to_string(),
+        body: stored_body,
+        encryption: encryption_label.to_string(),
         key_version: None,
         received_at,
         deliver_count: 0,
     };
 
-    let retention_secs = limits.retention.as_secs();
+    let retention_secs =
+        customer_config.effective_retention_secs(limits.retention.as_secs());
     queue::enqueue(&mut conn, &customer_id, &msg, retention_secs).await?;
 
     Ok((

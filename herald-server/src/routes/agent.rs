@@ -71,10 +71,14 @@ pub async fn poll_messages(
 
     let mut responses = Vec::with_capacity(messages.len());
     for msg in messages {
-        // Decrypt body (service-managed encryption)
-        let decrypted_body = crypto::decrypt(&state.config.service_encryption_key, &msg.body)?;
+        // Decrypt body based on per-message encryption label
+        let plaintext_body = if msg.encryption == "none" {
+            msg.body.clone()
+        } else {
+            crypto::decrypt(&state.config.service_encryption_key, &msg.body)?
+        };
         let body_b64 =
-            base64::engine::general_purpose::STANDARD.encode(&decrypted_body);
+            base64::engine::general_purpose::STANDARD.encode(&plaintext_body);
 
         // Decrypt headers if tier allows
         let headers = if limits.headers_included {

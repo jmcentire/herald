@@ -431,6 +431,20 @@ th{color:var(--muted);font-weight:500;font-size:0.8rem;text-transform:uppercase;
 <tr><td><code>bearer</code></td><td><code>secret</code></td><td>Provider sends <code>Authorization: Bearer {secret}</code></td></tr>
 <tr><td><code>hmac</code></td><td><code>key</code>, <code>header</code></td><td>Provider signs body with HMAC-SHA256, puts signature in named header. Herald validates. Handles <code>sha256=</code> prefix, hex and base64.</td></tr>
 </table>
+
+<h3>Configuration Options</h3>
+<table>
+<tr><th>Field</th><th>Default</th><th>Description</th></tr>
+<tr><td><code>encryption</code></td><td><code>"service"</code></td><td><code>"service"</code> (AES-256-GCM) or <code>"none"</code> (plaintext). Secure by default.</td></tr>
+<tr><td><code>retention_days</code></td><td>Tier default</td><td>Override retention (1–90). Capped by tier max (Free: 7d).</td></tr>
+</table>
+<pre>{
+  "customer_id": "my-agent",
+  "config": {
+    "encryption": "none",
+    "retention_days": 3
+  }
+}</pre>
 </div>
 
 <!-- Ingest -->

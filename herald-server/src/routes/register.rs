@@ -8,7 +8,7 @@ use serde::Deserialize;
 use serde_json::json;
 use subtle::ConstantTimeEq;
 
-use crate::auth::{self, IngestAuth};
+use crate::auth::{self, CustomerConfig, IngestAuth};
 use crate::config::Tier;
 use crate::error::HeraldError;
 use crate::state::AppState;
@@ -20,6 +20,9 @@ pub struct RegisterRequest {
     /// Optional ingest authentication config for webhook providers.
     #[serde(default)]
     pub ingest_auth: Option<IngestAuth>,
+    /// Optional per-customer configuration (encryption mode, retention, etc.).
+    #[serde(default)]
+    pub config: Option<CustomerConfig>,
 }
 
 /// POST /register
@@ -65,6 +68,11 @@ pub async fn register(
             &state.config.service_encryption_key,
         )
         .await?;
+    }
+
+    // Store/update customer config if provided
+    if let Some(ref config) = body.config {
+        auth::store_customer_config(&mut conn, &body.customer_id, config).await?;
     }
 
     // Check if customer already has a key

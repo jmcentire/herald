@@ -237,6 +237,94 @@ fn validate_hmac(
 }
 
 // =============================================================================
+// Customer Configuration
+// =============================================================================
+
+/// Encryption mode for message bodies.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum EncryptionMode {
+    /// AES-256-GCM with Herald's service key (default).
+    Service,
+    /// No encryption — body stored as plaintext base64.
+    None,
+}
+
+impl Default for EncryptionMode {
+    fn default() -> Self {
+        EncryptionMode::Service
+    }
+}
+
+/// Per-customer configuration options.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CustomerConfig {
+    /// Encryption mode for message bodies. Default: service.
+    #[serde(default)]
+    pub encryption: EncryptionMode,
+    /// Retention in days. Capped by tier maximum. Default: tier default.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub retention_days: Option<u32>,
+}
+
+impl Default for CustomerConfig {
+    fn default() -> Self {
+        CustomerConfig {
+            encryption: EncryptionMode::default(),
+            retention_days: Option::None,
+        }
+    }
+}
+
+impl CustomerConfig {
+    /// Resolve effective retention in seconds, capped by tier maximum.
+    pub fn effective_retention_secs(&self, tier_max_secs: u64) -> u64 {
+        match self.retention_days {
+            Some(days) => {
+                let requested = (days as u64) * 86400;
+                requested.min(tier_max_secs)
+            }
+            Option::None => tier_max_secs,
+        }
+    }
+}
+
+/// Store customer config in Redis (plain JSON — no secrets in config).
+pub async fn store_customer_config(
+    conn: &mut redis::aio::MultiplexedConnection,
+    customer_id: &str,
+    config: &CustomerConfig,
+) -> Result<(), HeraldError> {
+    let json = serde_json::to_string(config)
+        .map_err(|e| HeraldError::Internal(format!("serialize config: {e}")))?;
+
+    let _: () = redis::cmd("SET")
+        .arg(format!("config:{customer_id}"))
+        .arg(json)
+        .query_async(conn)
+        .await?;
+
+    Ok(())
+}
+
+/// Load customer config from Redis. Returns default if not configured.
+pub async fn load_customer_config(
+    conn: &mut redis::aio::MultiplexedConnection,
+    customer_id: &str,
+) -> Result<CustomerConfig, HeraldError> {
+    let json: Option<String> = redis::cmd("GET")
+        .arg(format!("config:{customer_id}"))
+        .query_async(conn)
+        .await?;
+
+    match json {
+        Some(json) => serde_json::from_str(&json)
+            .map_err(|e| HeraldError::Internal(format!("deserialize config: {e}"))),
+        Option::None => Ok(CustomerConfig::default()),
+    }
+}
+
+// =============================================================================
 // Tests
 // =============================================================================
 
@@ -369,5 +457,76 @@ mod tests {
         assert!(
             matches!(parsed, IngestAuth::Hmac { key, header } if key == "mykey" && header == "X-Signature")
         );
+    }
+
+    // ── CustomerConfig tests ─────────────────────────────────────────
+
+    #[test]
+    fn test_encryption_mode_default_is_service() {
+        assert_eq!(EncryptionMode::default(), EncryptionMode::Service);
+    }
+
+    #[test]
+    fn test_customer_config_defaults() {
+        let config = CustomerConfig::default();
+        assert_eq!(config.encryption, EncryptionMode::Service);
+        assert!(config.retention_days.is_none());
+    }
+
+    #[test]
+    fn test_customer_config_serde_roundtrip_service() {
+        let config = CustomerConfig {
+            encryption: EncryptionMode::Service,
+            retention_days: Some(3),
+        };
+        let json = serde_json::to_string(&config).unwrap();
+        let parsed: CustomerConfig = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed.encryption, EncryptionMode::Service);
+        assert_eq!(parsed.retention_days, Some(3));
+    }
+
+    #[test]
+    fn test_customer_config_serde_roundtrip_none() {
+        let config = CustomerConfig {
+            encryption: EncryptionMode::None,
+            retention_days: None,
+        };
+        let json = serde_json::to_string(&config).unwrap();
+        let parsed: CustomerConfig = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed.encryption, EncryptionMode::None);
+        assert!(parsed.retention_days.is_none());
+    }
+
+    #[test]
+    fn test_customer_config_omitted_fields_get_defaults() {
+        let json = r#"{}"#;
+        let config: CustomerConfig = serde_json::from_str(json).unwrap();
+        assert_eq!(config.encryption, EncryptionMode::Service);
+        assert!(config.retention_days.is_none());
+    }
+
+    #[test]
+    fn test_effective_retention_uses_tier_max_when_no_override() {
+        let config = CustomerConfig::default();
+        assert_eq!(config.effective_retention_secs(7 * 86400), 7 * 86400);
+    }
+
+    #[test]
+    fn test_effective_retention_respects_customer_override() {
+        let config = CustomerConfig {
+            encryption: EncryptionMode::Service,
+            retention_days: Some(3),
+        };
+        assert_eq!(config.effective_retention_secs(7 * 86400), 3 * 86400);
+    }
+
+    #[test]
+    fn test_effective_retention_caps_at_tier_max() {
+        let config = CustomerConfig {
+            encryption: EncryptionMode::Service,
+            retention_days: Some(90),
+        };
+        // Free tier max is 7 days
+        assert_eq!(config.effective_retention_secs(7 * 86400), 7 * 86400);
     }
 }
