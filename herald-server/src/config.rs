@@ -5,6 +5,9 @@ pub struct Config {
     pub redis_url: String,
     pub listen_addr: String,
     pub service_encryption_key: [u8; 32],
+    /// If set, POST /register requires this as a Bearer token.
+    /// Unset = open registration (hosted service behavior).
+    pub register_secret: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -100,10 +103,14 @@ impl Config {
         let mut service_encryption_key = [0u8; 32];
         service_encryption_key.copy_from_slice(&key_bytes[..32]);
 
+        let register_secret = std::env::var("HERALD_REGISTER_SECRET").ok()
+            .filter(|s| !s.is_empty());
+
         Config {
             redis_url,
             listen_addr,
             service_encryption_key,
+            register_secret,
         }
     }
 }

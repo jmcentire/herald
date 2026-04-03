@@ -1,12 +1,14 @@
+use axum::body::Bytes;
 use axum::extract::State;
-use axum::http::StatusCode;
+use axum::http::{HeaderMap, StatusCode};
 use axum::response::IntoResponse;
 use axum::Json;
 use rand::RngCore;
 use serde::Deserialize;
 use serde_json::json;
+use subtle::ConstantTimeEq;
 
-use crate::auth;
+use crate::auth::{self, IngestAuth};
 use crate::config::Tier;
 use crate::error::HeraldError;
 use crate::state::AppState;
@@ -15,15 +17,37 @@ use crate::state::AppState;
 pub struct RegisterRequest {
     /// Desired customer ID (e.g., "wander-sync"). Must not contain colons.
     pub customer_id: String,
+    /// Optional ingest authentication config for webhook providers.
+    #[serde(default)]
+    pub ingest_auth: Option<IngestAuth>,
 }
 
 /// POST /register
 /// Creates a new account with a generated API key. Returns the key.
 /// Idempotent: if the customer_id already has a key, returns it.
+/// If ingest_auth is provided, stores/updates it (even on idempotent calls).
+///
+/// If HERALD_REGISTER_SECRET is set, requires Authorization: Bearer {secret}.
 pub async fn register(
     State(state): State<AppState>,
-    Json(body): Json<RegisterRequest>,
+    headers: HeaderMap,
+    body: Bytes,
 ) -> Result<impl IntoResponse, HeraldError> {
+    // Guard: if register_secret is configured, require matching Bearer token
+    if let Some(ref expected) = state.config.register_secret {
+        let provided = auth::extract_bearer_from_headers(&headers)
+            .map_err(|_| HeraldError::Unauthorized("register requires authorization".into()))?;
+        if !bool::from(provided.as_bytes().ct_eq(expected.as_bytes())) {
+            return Err(HeraldError::Unauthorized(
+                "invalid register secret".into(),
+            ));
+        }
+    }
+
+    // Parse body manually (can't use Json extractor since we already extracted headers)
+    let body: RegisterRequest = serde_json::from_slice(&body)
+        .map_err(|e| HeraldError::BadRequest(format!("invalid request body: {e}")))?;
+
     if body.customer_id.is_empty() || body.customer_id.contains(':') {
         return Err(HeraldError::BadRequest(
             "customer_id must be non-empty and must not contain colons".into(),
@@ -31,6 +55,17 @@ pub async fn register(
     }
 
     let mut conn = state.redis.clone();
+
+    // Store/update ingest auth if provided (do this for both new and existing accounts)
+    if let Some(ref ingest_auth) = body.ingest_auth {
+        auth::store_ingest_auth(
+            &mut conn,
+            &body.customer_id,
+            ingest_auth,
+            &state.config.service_encryption_key,
+        )
+        .await?;
+    }
 
     // Check if customer already has a key
     let existing_key: Option<String> = redis::cmd("GET")
@@ -54,10 +89,10 @@ pub async fn register(
     rand::thread_rng().fill_bytes(&mut key_bytes);
     let api_key = format!("hrl_sk_{}", hex::encode(key_bytes));
 
-    // Register the account (stores apikey:{key} → account JSON)
+    // Register the account
     auth::register_account(&mut conn, &api_key, &body.customer_id, Tier::Free).await?;
 
-    // Store reverse mapping (customer_id → api_key) for idempotency
+    // Store reverse mapping for idempotency
     let _: () = redis::cmd("SET")
         .arg(format!("customer_apikey:{}", body.customer_id))
         .arg(&api_key)
@@ -66,6 +101,7 @@ pub async fn register(
 
     tracing::info!(
         customer_id = %body.customer_id,
+        has_ingest_auth = body.ingest_auth.is_some(),
         "registered new account"
     );
 

@@ -27,7 +27,12 @@ curl -X POST https://proxy.herald.tools/register \
   -d '{"customer_id":"myagent"}'
 # → {"customer_id":"myagent","api_key":"hrl_sk_...","created":true}
 
-# 2. Send a webhook (no auth needed — this is the URL you give to providers)
+# 1b. (Optional) Register with ingest auth — providers must authenticate
+curl -X POST https://proxy.herald.tools/register \
+  -H "Content-Type: application/json" \
+  -d '{"customer_id":"myagent","ingest_auth":{"type":"hmac","key":"signing-secret","header":"X-Hub-Signature-256"}}'
+
+# 2. Send a webhook (if ingest_auth configured, provider must authenticate)
 curl -X POST https://proxy.herald.tools/myagent/github \
   -H "Content-Type: application/json" \
   -d '{"action":"push","ref":"refs/heads/main"}'

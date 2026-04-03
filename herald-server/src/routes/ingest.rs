@@ -6,6 +6,7 @@ use axum::Json;
 use base64::Engine as _;
 use serde_json::json;
 
+use crate::auth;
 use crate::config::Tier;
 use crate::crypto;
 use crate::error::HeraldError;
@@ -29,6 +30,17 @@ pub async fn ingest_webhook(
 
     let mut conn = state.redis.clone();
     let endpoint = format!("{customer_id}/{endpoint_name}");
+
+    // Check per-customer ingest auth (if configured)
+    if let Some(ingest_auth) = auth::load_ingest_auth(
+        &mut conn,
+        &customer_id,
+        &state.config.service_encryption_key,
+    )
+    .await?
+    {
+        auth::validate_ingest_auth(&ingest_auth, &headers, &body)?;
+    }
 
     // Look up account tier (for now, default to Free if not found)
     let tier = lookup_tier(&mut conn, &customer_id).await;
