@@ -93,8 +93,9 @@ async fn main() {
             "/stream/{endpoint_name}",
             get(routes::websocket::websocket_handler),
         )
-        // Landing page and health check
+        // Landing page, API docs, and health check
         .route("/", get(pages::landing_page))
+        .route("/docs", get(pages::docs_page))
         .route("/health", get(health_check))
         .layer(TraceLayer::new_for_http())
         .with_state(state);

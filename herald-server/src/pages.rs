@@ -4,6 +4,10 @@ pub async fn landing_page() -> Html<&'static str> {
     Html(LANDING_HTML)
 }
 
+pub async fn docs_page() -> Html<&'static str> {
+    Html(DOCS_HTML)
+}
+
 const LANDING_HTML: &str = r##"<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -329,5 +333,256 @@ footer .bottom span{font-family:var(--font-mono);font-size:.6875rem;color:var(--
 </div>
 </footer>
 
+</body>
+</html>"##;
+
+const DOCS_HTML: &str = r##"<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Herald API Reference</title>
+<meta name="description" content="Herald webhook relay API documentation — register, ingest, poll, acknowledge.">
+<meta name="theme-color" content="#0a0a14">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a14;--surface:#12121e;--border:#1e1e30;--text:#e0e0e8;--muted:#8888a0;--accent:#6ee7b7;--code-bg:#1a1a2e;--method-get:#60a5fa;--method-post:#34d399;--method-put:#fbbf24;--method-del:#f87171}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+.container{max-width:900px;margin:0 auto;padding:2rem 1.5rem}
+h1{font-size:2rem;margin-bottom:0.5rem}
+h2{font-size:1.4rem;margin-top:2.5rem;margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border)}
+h3{font-size:1.1rem;margin-top:1.5rem;margin-bottom:0.5rem}
+.subtitle{color:var(--muted);margin-bottom:2rem}
+.endpoint{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin-bottom:1.25rem}
+.endpoint-header{display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;font-family:'JetBrains Mono',monospace;font-size:0.95rem}
+.method{padding:2px 8px;border-radius:4px;font-weight:600;font-size:0.8rem;text-transform:uppercase}
+.method-get{background:rgba(96,165,250,0.15);color:var(--method-get)}
+.method-post{background:rgba(52,211,153,0.15);color:var(--method-post)}
+.method-put{background:rgba(251,191,36,0.15);color:var(--method-put)}
+.method-del{background:rgba(248,113,113,0.15);color:var(--method-del)}
+.endpoint p{color:var(--muted);font-size:0.9rem;margin-bottom:0.5rem}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:6px;padding:1rem;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:0.85rem;margin:0.75rem 0;line-height:1.5}
+code{font-family:'JetBrains Mono',monospace;font-size:0.85rem;background:var(--code-bg);padding:1px 4px;border-radius:3px}
+table{width:100%;border-collapse:collapse;margin:0.75rem 0;font-size:0.9rem}
+th,td{text-align:left;padding:0.5rem 0.75rem;border-bottom:1px solid var(--border)}
+th{color:var(--muted);font-weight:500;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em}
+.tag{display:inline-block;padding:1px 6px;border-radius:3px;font-size:0.75rem;font-weight:500}
+.tag-optional{background:rgba(136,136,160,0.15);color:var(--muted)}
+.tag-required{background:rgba(248,113,113,0.15);color:var(--method-del)}
+.tag-auth{background:rgba(251,191,36,0.15);color:var(--method-put)}
+.nav{margin-bottom:2rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
+.nav a{margin-right:1.5rem;color:var(--muted);font-size:0.9rem}
+.nav a:hover{color:var(--accent)}
+.back{color:var(--muted);font-size:0.9rem;margin-bottom:1rem;display:block}
+</style>
+</head>
+<body>
+<div class="container">
+
+<a class="back" href="/">&larr; herald.tools</a>
+<h1>API Reference</h1>
+<p class="subtitle">Base URL: <code>https://proxy.herald.tools</code></p>
+
+<nav class="nav">
+<a href="#registration">Registration</a>
+<a href="#ingest">Ingest</a>
+<a href="#polling">Polling</a>
+<a href="#ack">Acknowledge</a>
+<a href="#errors">Errors</a>
+<a href="#auth">Authentication</a>
+</nav>
+
+<!-- Registration -->
+<h2 id="registration">Registration</h2>
+
+<div class="endpoint">
+<div class="endpoint-header">
+<span class="method method-post">POST</span>
+<span>/register</span>
+</div>
+<p>Create an account and get an API key. Idempotent — same customer_id returns existing key.</p>
+<p><span class="tag tag-optional">Optional auth</span> If <code>HERALD_REGISTER_SECRET</code> is set (self-hosted), requires <code>Authorization: Bearer {secret}</code>.</p>
+
+<h3>Request</h3>
+<pre>{
+  "customer_id": "my-agent",
+  "ingest_auth": {             // optional
+    "type": "bearer",          // or "hmac"
+    "secret": "webhook-secret" // bearer: shared secret
+    // hmac: "key" + "header"
+  }
+}</pre>
+
+<h3>Response <code>201 Created</code></h3>
+<pre>{
+  "customer_id": "my-agent",
+  "api_key": "hrl_sk_...",
+  "created": true
+}</pre>
+
+<h3>Ingest Auth Options</h3>
+<table>
+<tr><th>Type</th><th>Fields</th><th>How it works</th></tr>
+<tr><td><code>bearer</code></td><td><code>secret</code></td><td>Provider sends <code>Authorization: Bearer {secret}</code></td></tr>
+<tr><td><code>hmac</code></td><td><code>key</code>, <code>header</code></td><td>Provider signs body with HMAC-SHA256, puts signature in named header. Herald validates. Handles <code>sha256=</code> prefix, hex and base64.</td></tr>
+</table>
+</div>
+
+<!-- Ingest -->
+<h2 id="ingest">Ingest (Webhook Providers)</h2>
+
+<div class="endpoint">
+<div class="endpoint-header">
+<span class="method method-post">POST</span>
+<span>/{customer_id}/{endpoint_name}</span>
+</div>
+<p>Receive a webhook. No authentication required unless <code>ingest_auth</code> is configured for this customer.</p>
+<p>Body: raw webhook payload (any content type). Headers are preserved.</p>
+
+<h3>Response <code>200 OK</code></h3>
+<pre>{
+  "message_id": "a1b2c3...",
+  "fingerprint": "d4e5f6...",
+  "received_at": "1775183297820527578"
+}</pre>
+
+<h3>Deduplication</h3>
+<p>If the same body was already received for this endpoint:</p>
+<pre>{
+  "fingerprint": "d4e5f6...",
+  "deduplicated": true
+}</pre>
+</div>
+
+<!-- Polling -->
+<h2 id="polling">Polling (Agents)</h2>
+
+<div class="endpoint">
+<div class="endpoint-header">
+<span class="method method-get">GET</span>
+<span>/queue/{endpoint_name}</span>
+<span class="tag tag-auth">Auth required</span>
+</div>
+<p>Fetch queued messages. Messages become invisible for <code>visibility_timeout</code> seconds.</p>
+
+<h3>Query Parameters</h3>
+<table>
+<tr><th>Param</th><th>Default</th><th>Description</th></tr>
+<tr><td><code>limit</code></td><td>10</td><td>Max messages to return (1–100)</td></tr>
+<tr><td><code>visibility_timeout</code></td><td>300</td><td>Seconds before redelivery (30–43200)</td></tr>
+</table>
+
+<h3>Response <code>200 OK</code></h3>
+<pre>{
+  "messages": [
+    {
+      "message_id": "a1b2c3...",
+      "fingerprint": "d4e5f6...",
+      "body": "base64-encoded-payload",
+      "headers": {"Content-Type": "application/json"},
+      "received_at": "1775183297820527578",
+      "deliver_count": 1,
+      "encryption": "service"
+    }
+  ]
+}</pre>
+<p>Returns <code>204 No Content</code> if queue is empty.</p>
+</div>
+
+<!-- Acknowledge -->
+<h2 id="ack">Acknowledge / NACK / Heartbeat</h2>
+
+<div class="endpoint">
+<div class="endpoint-header">
+<span class="method method-post">POST</span>
+<span>/ack/{endpoint_name}/{message_id}</span>
+<span class="tag tag-auth">Auth required</span>
+</div>
+<p>Mark a message as processed. Removes it from the queue.</p>
+<pre>{"acknowledged": true}</pre>
+</div>
+
+<div class="endpoint">
+<div class="endpoint-header">
+<span class="method method-post">POST</span>
+<span>/ack/{endpoint_name}</span>
+<span class="tag tag-auth">Auth required</span>
+</div>
+<p>Batch acknowledge. Body: <code>{"message_ids": ["id1", "id2"]}</code></p>
+<pre>{"acknowledged": ["id1", "id2"], "failed": []}</pre>
+</div>
+
+<div class="endpoint">
+<div class="endpoint-header">
+<span class="method method-post">POST</span>
+<span>/nack/{endpoint_name}/{message_id}</span>
+<span class="tag tag-auth">Auth required</span>
+</div>
+<p>Reject a message. <code>?permanent=true</code> sends to DLQ. Default: requeue for retry.</p>
+<pre>{"requeued": true}  // or {"dlq": true}</pre>
+</div>
+
+<div class="endpoint">
+<div class="endpoint-header">
+<span class="method method-post">POST</span>
+<span>/heartbeat/{endpoint_name}/{message_id}</span>
+<span class="tag tag-auth">Auth required</span>
+</div>
+<p>Extend visibility timeout. <code>?extend=600</code> (seconds, 30–43200).</p>
+<pre>{"visibility_timeout_extended": true}</pre>
+</div>
+
+<!-- WebSocket -->
+<h2>WebSocket Streaming</h2>
+
+<div class="endpoint">
+<div class="endpoint-header">
+<span class="method method-get">GET</span>
+<span>/stream/{endpoint_name}</span>
+</div>
+<p>Upgrade to WebSocket. First message must be auth: <code>{"type": "auth", "api_key": "hrl_sk_..."}</code></p>
+<p>Server sends <code>{"type": "message", ...}</code> as messages arrive. Client sends <code>{"type": "ack", "message_id": "..."}</code>.</p>
+</div>
+
+<!-- Errors -->
+<h2 id="errors">Error Responses</h2>
+<table>
+<tr><th>Code</th><th>Meaning</th></tr>
+<tr><td>400</td><td>Bad request (invalid customer_id, malformed body)</td></tr>
+<tr><td>401</td><td>Unauthorized (missing/invalid API key or ingest auth)</td></tr>
+<tr><td>413</td><td>Payload too large (Free: 64KB, Standard: 1MB, Pro: 10MB)</td></tr>
+<tr><td>429</td><td>Rate limited (daily message quota exceeded)</td></tr>
+<tr><td>507</td><td>Queue full (max depth exceeded)</td></tr>
+</table>
+<p>All errors return <code>{"error": "description"}</code>.</p>
+
+<!-- Auth -->
+<h2 id="auth">Authentication</h2>
+<h3>Agent Auth (polling, ack, nack, heartbeat)</h3>
+<p>Send your API key as a Bearer token: <code>Authorization: Bearer hrl_sk_...</code></p>
+<p>Get your key from <code>POST /register</code>.</p>
+
+<h3>Ingest Auth (optional, per-customer)</h3>
+<p>Configure via the <code>ingest_auth</code> field when registering. Two modes:</p>
+<table>
+<tr><th>Mode</th><th>Provider sends</th><th>Herald validates</th></tr>
+<tr><td>Bearer</td><td><code>Authorization: Bearer {secret}</code></td><td>Constant-time comparison</td></tr>
+<tr><td>HMAC</td><td>Signature in named header (e.g., <code>X-Hub-Signature-256: sha256=...</code>)</td><td>HMAC-SHA256 of body with stored key</td></tr>
+</table>
+<p>If no <code>ingest_auth</code> configured: ingest is open (default).</p>
+
+<h3>Register Auth (self-hosted only)</h3>
+<p>Set <code>HERALD_REGISTER_SECRET</code> env var. If set, <code>POST /register</code> requires <code>Authorization: Bearer {secret}</code>.</p>
+
+<footer style="margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);color:var(--muted);font-size:0.85rem;text-align:center">
+<p>Herald v0.3.0 &middot; <a href="https://github.com/jmcentire/herald">GitHub</a> &middot; <a href="https://github.com/jmcentire/herald/blob/master/SPEC.md">Full Spec</a> &middot; MIT License</p>
+</footer>
+
+</div>
 </body>
 </html>"##;

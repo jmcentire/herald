@@ -840,6 +840,7 @@ A **pull-based, encrypted, self-hostable webhook queue** with a companion CLI da
 
 | Tool | Model | Queue? | Pull? | Self-Host? | Encryption? | Agent-Oriented? |
 |------|-------|--------|-------|-----------|-------------|----------------|
+| smee.io | EventSource stream | No | No | No | No | No |
 | ngrok | Tunnel | No | No | No | Transit only | No |
 | Hookdeck | Push gateway | Yes | CLI only | No | At rest | No |
 | Webhook Relay | Push + tunnel | Yes | No | No | Transit | No |
