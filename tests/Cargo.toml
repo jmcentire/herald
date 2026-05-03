@@ -1,0 +1,96 @@
+[package]
+name = "herald-smoke-tests"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+description = "API-drift smoke tests for the herald workspace. Each test verifies that the source files pact decomposed still exist and still expose the public symbols pact captured. Intended as a fast pre-push gate complementing the inline unit tests."
+
+# tests/ is its own (test-only) workspace member crate. We don't ship a library
+# or binary; lib.rs is empty.
+
+[lib]
+path = "src/lib.rs"
+
+# Each [[test]] entry below preserves pact-adopt's original filename under
+# smoke/ while giving cargo a valid Rust binary name (no hyphens).
+
+[[test]]
+name = "smoke_herald_cli_src"
+path = "smoke/test_herald-cli_src.rs"
+
+[[test]]
+name = "smoke_herald_cli_src_client"
+path = "smoke/test_herald-cli_src_client.rs"
+
+[[test]]
+name = "smoke_herald_cli_src_config"
+path = "smoke/test_herald-cli_src_config.rs"
+
+[[test]]
+name = "smoke_herald_cli_src_error"
+path = "smoke/test_herald-cli_src_error.rs"
+
+[[test]]
+name = "smoke_herald_cli_src_handler"
+path = "smoke/test_herald-cli_src_handler.rs"
+
+[[test]]
+name = "smoke_herald_cli_src_poller"
+path = "smoke/test_herald-cli_src_poller.rs"
+
+[[test]]
+name = "smoke_herald_cli_src_streamer"
+path = "smoke/test_herald-cli_src_streamer.rs"
+
+[[test]]
+name = "smoke_herald_server_src"
+path = "smoke/test_herald-server_src.rs"
+
+[[test]]
+name = "smoke_herald_server_src_auth"
+path = "smoke/test_herald-server_src_auth.rs"
+
+[[test]]
+name = "smoke_herald_server_src_billing"
+path = "smoke/test_herald-server_src_billing.rs"
+
+[[test]]
+name = "smoke_herald_server_src_config"
+path = "smoke/test_herald-server_src_config.rs"
+
+[[test]]
+name = "smoke_herald_server_src_crypto"
+path = "smoke/test_herald-server_src_crypto.rs"
+
+[[test]]
+name = "smoke_herald_server_src_error"
+path = "smoke/test_herald-server_src_error.rs"
+
+[[test]]
+name = "smoke_herald_server_src_pages"
+path = "smoke/test_herald-server_src_pages.rs"
+
+[[test]]
+name = "smoke_herald_server_src_queue"
+path = "smoke/test_herald-server_src_queue.rs"
+
+[[test]]
+name = "smoke_herald_server_src_routes_agent"
+path = "smoke/test_herald-server_src_routes_agent.rs"
+
+[[test]]
+name = "smoke_herald_server_src_routes_ingest"
+path = "smoke/test_herald-server_src_routes_ingest.rs"
+
+[[test]]
+name = "smoke_herald_server_src_routes_register"
+path = "smoke/test_herald-server_src_routes_register.rs"
+
+[[test]]
+name = "smoke_herald_server_src_routes_websocket"
+path = "smoke/test_herald-server_src_routes_websocket.rs"
+
+[[test]]
+name = "smoke_herald_server_src_state"
+path = "smoke/test_herald-server_src_state.rs"

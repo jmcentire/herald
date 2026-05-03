@@ -1,6 +1,7 @@
 /target
 .constrain/
 .constrain_answers.txt
+.pact/
 *.swp
 *.swo
 .env
