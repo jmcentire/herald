@@ -29,19 +29,21 @@ fn default_visibility_timeout() -> u64 {
 
 #[derive(Debug, Serialize)]
 pub struct MessageResponse {
+    pub object: &'static str,
     pub message_id: String,
     pub fingerprint: String,
     pub body: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub headers: Option<serde_json::Value>,
-    pub received_at: String,
+    /// Unix integer seconds since epoch.
+    pub received_at: i64,
     pub deliver_count: u32,
     pub encryption: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub key_version: Option<String>,
 }
 
-/// GET /queue/:endpoint_name — poll for messages
+/// GET /endpoints/{endpoint_name}/messages — poll for messages
 pub async fn poll_messages(
     State(state): State<AppState>,
     Path(endpoint_name): Path<String>,
@@ -65,9 +67,10 @@ pub async fn poll_messages(
     )
     .await?;
 
-    if messages.is_empty() {
-        return Ok(axum::http::StatusCode::NO_CONTENT.into_response());
-    }
+    // Always return a 200 with the list envelope (no 204).
+    // has_more is a heuristic: true iff we filled the requested page.
+    let has_more = messages.len() == limit && limit > 0;
+    let queue_depth = queue::depth(&mut conn, &account.customer_id, &endpoint_name).await?;
 
     let mut responses = Vec::with_capacity(messages.len());
     for msg in messages {
@@ -97,39 +100,51 @@ pub async fn poll_messages(
         };
 
         responses.push(MessageResponse {
-            message_id: msg.message_id,
-            fingerprint: msg.fingerprint,
+            object: "message",
+            message_id: crypto::wire_message_id(&msg.message_id),
+            fingerprint: crypto::wire_fingerprint(&msg.fingerprint),
             body: body_b64,
             headers,
-            received_at: msg.received_at.to_string(),
+            received_at: queue::nanos_to_seconds(msg.received_at),
             deliver_count: msg.deliver_count,
             encryption: msg.encryption,
             key_version: msg.key_version,
         });
     }
 
-    Ok(Json(json!({ "messages": responses })).into_response())
+    Ok(Json(json!({
+        "object": "list",
+        "data": responses,
+        "has_more": has_more,
+        "queue_depth": queue_depth,
+    }))
+    .into_response())
 }
 
-/// POST /ack/:endpoint_name/:message_id — acknowledge a single message
+/// POST /endpoints/{endpoint_name}/messages/{message_id}/ack
 pub async fn ack_message(
     State(state): State<AppState>,
-    Path((endpoint_name, message_id)): Path<(String, String)>,
+    Path((endpoint_name, wire_id)): Path<(String, String)>,
     req: axum::extract::Request,
 ) -> Result<impl IntoResponse, HeraldError> {
     let api_key = auth::extract_api_key(&req)?;
+    let raw_id = crypto::parse_wire_message_id(&wire_id)?;
     let mut conn = state.redis.clone();
     let account = auth::lookup_account(&mut conn, &api_key).await?;
 
-    let acked = queue::ack(&mut conn, &account.customer_id, &endpoint_name, &message_id).await?;
+    let acked = queue::ack(&mut conn, &account.customer_id, &endpoint_name, &raw_id).await?;
 
     if !acked {
         return Err(HeraldError::NotFound(format!(
-            "message {message_id} not in flight"
+            "message {wire_id} not in flight"
         )));
     }
 
-    Ok(Json(json!({ "acknowledged": true })))
+    Ok(Json(json!({
+        "object": "ack_result",
+        "message_id": wire_id,
+        "acknowledged": true,
+    })))
 }
 
 #[derive(Debug, Deserialize)]
@@ -137,7 +152,7 @@ pub struct BatchAckRequest {
     pub message_ids: Vec<String>,
 }
 
-/// POST /ack/:endpoint_name — batch acknowledge messages
+/// POST /endpoints/{endpoint_name}/messages/ack — batch acknowledge
 pub async fn batch_ack_messages(
     State(state): State<AppState>,
     Path(endpoint_name): Path<String>,
@@ -157,84 +172,153 @@ pub async fn batch_ack_messages(
     let mut acknowledged = Vec::new();
     let mut failed = Vec::new();
 
-    for msg_id in &batch.message_ids {
-        match queue::ack(&mut conn, &account.customer_id, &endpoint_name, msg_id).await {
-            Ok(true) => acknowledged.push(msg_id.clone()),
-            _ => failed.push(msg_id.clone()),
+    for wire_id in &batch.message_ids {
+        let raw = match crypto::parse_wire_message_id(wire_id) {
+            Ok(r) => r,
+            Err(_) => {
+                failed.push(wire_id.clone());
+                continue;
+            }
+        };
+        match queue::ack(&mut conn, &account.customer_id, &endpoint_name, &raw).await {
+            Ok(true) => acknowledged.push(wire_id.clone()),
+            _ => failed.push(wire_id.clone()),
         }
     }
 
     Ok(Json(json!({
+        "object": "batch_ack_result",
         "acknowledged": acknowledged,
         "failed": failed,
     })))
 }
 
-#[derive(Debug, Deserialize)]
-pub struct NackParams {
-    #[serde(default)]
-    pub permanent: bool,
+/// NACK disposition. Open enum: future values may include
+/// `delay_requeue`, `discard`, etc.
+#[derive(Debug, Deserialize, Default, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum NackDisposition {
+    #[default]
+    Requeue,
+    Dlq,
 }
 
-/// POST /nack/:endpoint_name/:message_id — negative acknowledge
+#[derive(Debug, Deserialize, Default)]
+pub struct NackBody {
+    #[serde(default)]
+    pub disposition: NackDisposition,
+}
+
+/// POST /endpoints/{endpoint_name}/messages/{message_id}/nack
 pub async fn nack_message(
     State(state): State<AppState>,
-    Path((endpoint_name, message_id)): Path<(String, String)>,
-    Query(params): Query<NackParams>,
+    Path((endpoint_name, wire_id)): Path<(String, String)>,
     req: axum::extract::Request,
 ) -> Result<impl IntoResponse, HeraldError> {
     let api_key = auth::extract_api_key(&req)?;
+    let raw_id = crypto::parse_wire_message_id(&wire_id)?;
+
+    // Body is optional; default to requeue.
+    let body_bytes = axum::body::to_bytes(req.into_body(), 64 * 1024)
+        .await
+        .map_err(|e| HeraldError::BadRequest(e.to_string()))?;
+    let body: NackBody = if body_bytes.is_empty() {
+        NackBody::default()
+    } else {
+        serde_json::from_slice(&body_bytes).map_err(|e| {
+            HeraldError::BadRequest(format!("invalid nack body: {e}"))
+        })?
+    };
+
     let mut conn = state.redis.clone();
     let account = auth::lookup_account(&mut conn, &api_key).await?;
 
+    let permanent = body.disposition == NackDisposition::Dlq;
     let max_retries = 3; // Default, configurable per endpoint later
     let nacked = queue::nack(
         &mut conn,
         &account.customer_id,
         &endpoint_name,
-        &message_id,
-        params.permanent,
+        &raw_id,
+        permanent,
         max_retries,
     )
     .await?;
 
     if !nacked {
         return Err(HeraldError::NotFound(format!(
-            "message {message_id} not in flight"
+            "message {wire_id} not in flight"
         )));
     }
 
-    if params.permanent {
-        Ok(Json(json!({ "dlq": true })))
-    } else {
-        Ok(Json(json!({ "requeued": true })))
-    }
+    let disposition_str = if permanent { "dlq" } else { "requeue" };
+    Ok(Json(json!({
+        "object": "nack_result",
+        "message_id": wire_id,
+        "disposition": disposition_str,
+    })))
 }
 
-/// POST /heartbeat/:endpoint_name/:message_id — extend visibility timeout
+/// POST /endpoints/{endpoint_name}/messages/{message_id}/heartbeat
 pub async fn heartbeat(
     State(state): State<AppState>,
-    Path((_endpoint_name, message_id)): Path<(String, String)>,
+    Path((_endpoint_name, wire_id)): Path<(String, String)>,
     Query(params): Query<HeartbeatParams>,
     req: axum::extract::Request,
 ) -> Result<impl IntoResponse, HeraldError> {
     let api_key = auth::extract_api_key(&req)?;
+    let raw_id = crypto::parse_wire_message_id(&wire_id)?;
     let mut conn = state.redis.clone();
     let _account = auth::lookup_account(&mut conn, &api_key).await?;
 
     let extend = params.extend.unwrap_or(300).clamp(30, 43200);
-    let extended = queue::heartbeat(&mut conn, &message_id, extend).await?;
+    let extended = queue::heartbeat(&mut conn, &raw_id, extend).await?;
 
     if !extended {
         return Err(HeraldError::NotFound(format!(
-            "no visibility timeout for {message_id}"
+            "no visibility timeout for {wire_id}"
         )));
     }
 
-    Ok(Json(json!({ "visibility_timeout_extended": true })))
+    Ok(Json(json!({
+        "object": "heartbeat_result",
+        "message_id": wire_id,
+        "visibility_timeout_extended": true,
+        "extended_by": extend,
+    })))
 }
 
 #[derive(Debug, Deserialize)]
 pub struct HeartbeatParams {
     pub extend: Option<u64>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_nack_disposition_default_is_requeue() {
+        let body: NackBody = serde_json::from_str("{}").unwrap();
+        assert_eq!(body.disposition, NackDisposition::Requeue);
+    }
+
+    #[test]
+    fn test_nack_disposition_parses_dlq() {
+        let body: NackBody =
+            serde_json::from_str(r#"{"disposition":"dlq"}"#).unwrap();
+        assert_eq!(body.disposition, NackDisposition::Dlq);
+    }
+
+    #[test]
+    fn test_nack_disposition_parses_requeue() {
+        let body: NackBody =
+            serde_json::from_str(r#"{"disposition":"requeue"}"#).unwrap();
+        assert_eq!(body.disposition, NackDisposition::Requeue);
+    }
+
+    #[test]
+    fn test_nack_disposition_rejects_unknown() {
+        assert!(serde_json::from_str::<NackBody>(r#"{"disposition":"foo"}"#).is_err());
+    }
 }

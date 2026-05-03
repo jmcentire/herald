@@ -20,6 +20,42 @@ pub fn message_id(endpoint: &str, received_at_nanos: u128, body: &[u8]) -> Strin
     hex::encode(hasher.finalize())
 }
 
+pub const MESSAGE_ID_PREFIX: &str = "msg_";
+pub const FINGERPRINT_PREFIX: &str = "fp_";
+
+/// Wrap a raw hex message_id for the wire (e.g. "msg_abc...").
+pub fn wire_message_id(raw_hex: &str) -> String {
+    format!("{MESSAGE_ID_PREFIX}{raw_hex}")
+}
+
+/// Wrap a raw hex fingerprint for the wire (e.g. "fp_abc...").
+pub fn wire_fingerprint(raw_hex: &str) -> String {
+    format!("{FINGERPRINT_PREFIX}{raw_hex}")
+}
+
+/// Strip the `msg_` prefix from a wire-format message_id.
+/// Returns Err if the prefix is missing or the suffix is not lowercase hex of length 64.
+pub fn parse_wire_message_id(s: &str) -> Result<String, HeraldError> {
+    parse_wire_id(MESSAGE_ID_PREFIX, s)
+}
+
+/// Strip the `fp_` prefix from a wire-format fingerprint.
+pub fn parse_wire_fingerprint(s: &str) -> Result<String, HeraldError> {
+    parse_wire_id(FINGERPRINT_PREFIX, s)
+}
+
+fn parse_wire_id(prefix: &str, s: &str) -> Result<String, HeraldError> {
+    let raw = s.strip_prefix(prefix).ok_or_else(|| {
+        HeraldError::BadRequest(format!("expected id with prefix '{prefix}'"))
+    })?;
+    if raw.len() != 64 || !raw.bytes().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f')) {
+        return Err(HeraldError::BadRequest(
+            "id suffix must be 64 lowercase hex characters".into(),
+        ));
+    }
+    Ok(raw.to_string())
+}
+
 /// Encrypt data with AES-256-GCM using the provided key.
 /// Returns nonce (12 bytes) prepended to ciphertext.
 pub fn encrypt(key: &[u8; 32], plaintext: &[u8]) -> Result<Vec<u8>, HeraldError> {
@@ -122,6 +158,45 @@ mod tests {
     fn test_decrypt_short_data_fails() {
         let key = [42u8; 32];
         assert!(decrypt(&key, &[0u8; 5]).is_err());
+    }
+
+    #[test]
+    fn test_wire_message_id_roundtrip() {
+        let raw = fingerprint(b"hello world"); // 64-char hex
+        let wire = wire_message_id(&raw);
+        assert!(wire.starts_with("msg_"));
+        assert_eq!(parse_wire_message_id(&wire).unwrap(), raw);
+    }
+
+    #[test]
+    fn test_wire_fingerprint_roundtrip() {
+        let raw = fingerprint(b"hello world");
+        let wire = wire_fingerprint(&raw);
+        assert!(wire.starts_with("fp_"));
+        assert_eq!(parse_wire_fingerprint(&wire).unwrap(), raw);
+    }
+
+    #[test]
+    fn test_parse_wire_id_rejects_missing_prefix() {
+        let raw = fingerprint(b"x");
+        assert!(parse_wire_message_id(&raw).is_err());
+    }
+
+    #[test]
+    fn test_parse_wire_id_rejects_wrong_prefix() {
+        let raw = fingerprint(b"x");
+        assert!(parse_wire_message_id(&format!("fp_{raw}")).is_err());
+    }
+
+    #[test]
+    fn test_parse_wire_id_rejects_short_suffix() {
+        assert!(parse_wire_message_id("msg_deadbeef").is_err());
+    }
+
+    #[test]
+    fn test_parse_wire_id_rejects_non_hex() {
+        let bad = "z".repeat(64);
+        assert!(parse_wire_message_id(&format!("msg_{bad}")).is_err());
     }
 
     #[test]

@@ -1,4 +1,4 @@
-use axum::http::StatusCode;
+use axum::http::{header, HeaderMap, HeaderValue, StatusCode};
 use axum::response::{IntoResponse, Response};
 use serde_json::json;
 
@@ -32,34 +32,102 @@ pub enum HeraldError {
     Internal(String),
 }
 
+/// Default Retry-After (seconds) for queue-full and rate-limit responses.
+const RETRY_AFTER_SECS: u64 = 60;
+
 impl IntoResponse for HeraldError {
     fn into_response(self) -> Response {
-        let (status, message) = match &self {
+        let (status, type_, code, message, retry_after) = match &self {
             HeraldError::Redis(e) => {
                 tracing::error!(error = %e, "redis error");
-                (StatusCode::INTERNAL_SERVER_ERROR, "internal error")
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "internal_error",
+                    "internal_error",
+                    "internal error".to_string(),
+                    None,
+                )
             }
             HeraldError::Encryption(e) => {
                 tracing::error!(error = %e, "encryption error");
-                (StatusCode::INTERNAL_SERVER_ERROR, "internal error")
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "internal_error",
+                    "internal_error",
+                    "internal error".to_string(),
+                    None,
+                )
             }
-            HeraldError::RateLimited => (StatusCode::TOO_MANY_REQUESTS, "rate limit exceeded"),
-            HeraldError::QueueFull => {
-                (StatusCode::INSUFFICIENT_STORAGE, "queue full")
-            }
-            HeraldError::PayloadTooLarge { .. } => {
-                (StatusCode::PAYLOAD_TOO_LARGE, "payload too large")
-            }
-            HeraldError::NotFound(_) => (StatusCode::NOT_FOUND, "not found"),
-            HeraldError::Unauthorized(_) => (StatusCode::UNAUTHORIZED, "unauthorized"),
-            HeraldError::BadRequest(_) => (StatusCode::BAD_REQUEST, "bad request"),
+            HeraldError::RateLimited => (
+                StatusCode::TOO_MANY_REQUESTS,
+                "rate_limit_exceeded",
+                "rate_limit_exceeded",
+                "rate limit exceeded".to_string(),
+                Some(RETRY_AFTER_SECS),
+            ),
+            HeraldError::QueueFull => (
+                StatusCode::TOO_MANY_REQUESTS,
+                "resource_exhausted",
+                "queue_depth_exceeded",
+                "queue depth limit reached; ACK existing messages to make room"
+                    .to_string(),
+                Some(RETRY_AFTER_SECS),
+            ),
+            HeraldError::PayloadTooLarge { size, limit } => (
+                StatusCode::PAYLOAD_TOO_LARGE,
+                "invalid_request",
+                "payload_too_large",
+                format!("payload of {size} bytes exceeds {limit} byte limit"),
+                None,
+            ),
+            HeraldError::NotFound(msg) => (
+                StatusCode::NOT_FOUND,
+                "invalid_request",
+                "not_found",
+                msg.clone(),
+                None,
+            ),
+            HeraldError::Unauthorized(msg) => (
+                StatusCode::UNAUTHORIZED,
+                "authentication_error",
+                "unauthorized",
+                msg.clone(),
+                None,
+            ),
+            HeraldError::BadRequest(msg) => (
+                StatusCode::BAD_REQUEST,
+                "invalid_request",
+                "bad_request",
+                msg.clone(),
+                None,
+            ),
             HeraldError::Internal(e) => {
                 tracing::error!(error = %e, "internal error");
-                (StatusCode::INTERNAL_SERVER_ERROR, "internal error")
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "internal_error",
+                    "internal_error",
+                    "internal error".to_string(),
+                    None,
+                )
             }
         };
 
-        let body = json!({ "error": message });
-        (status, axum::Json(body)).into_response()
+        let body = json!({
+            "error": {
+                "type": type_,
+                "code": code,
+                "message": message,
+            }
+        });
+
+        let mut headers = HeaderMap::new();
+        if let Some(secs) = retry_after {
+            if let Ok(v) = HeaderValue::from_str(&secs.to_string()) {
+                headers.insert(header::RETRY_AFTER, v);
+            }
+        }
+
+        (status, headers, axum::Json(body)).into_response()
     }
 }

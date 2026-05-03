@@ -79,7 +79,8 @@ pub async fn ingest_webhook(
         return Ok((
             StatusCode::OK,
             Json(json!({
-                "fingerprint": fp,
+                "object": "ingest_result",
+                "fingerprint": crypto::wire_fingerprint(&fp),
                 "deduplicated": true,
             })),
         ));
@@ -128,9 +129,11 @@ pub async fn ingest_webhook(
     Ok((
         StatusCode::OK,
         Json(json!({
-            "message_id": message_id,
-            "fingerprint": fp,
-            "received_at": received_at.to_string(),
+            "object": "ingest_result",
+            "message_id": crypto::wire_message_id(&message_id),
+            "fingerprint": crypto::wire_fingerprint(&fp),
+            "received_at": queue::nanos_to_seconds(received_at),
+            "received_at_ns": received_at.to_string(),
         })),
     ))
 }

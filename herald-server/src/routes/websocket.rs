@@ -15,6 +15,14 @@ use crate::state::AppState;
 const AUTH_TIMEOUT: Duration = Duration::from_secs(5);
 const POLL_INTERVAL: Duration = Duration::from_secs(1);
 
+#[derive(Debug, Deserialize, Default, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+enum NackDisposition {
+    #[default]
+    Requeue,
+    Dlq,
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(tag = "type")]
 #[serde(rename_all = "snake_case")]
@@ -28,7 +36,7 @@ enum ClientMessage {
     Nack {
         message_id: String,
         #[serde(default)]
-        permanent: bool,
+        disposition: NackDisposition,
     },
     Heartbeat {
         message_id: String,
@@ -48,7 +56,8 @@ enum ServerMessage {
         body: String,
         #[serde(skip_serializing_if = "Option::is_none")]
         headers: Option<serde_json::Value>,
-        received_at: String,
+        /// Unix integer seconds since epoch.
+        received_at: i64,
         deliver_count: u32,
     },
     AckOk {
@@ -59,7 +68,7 @@ enum ServerMessage {
     },
 }
 
-/// WS /stream/:endpoint_name — WebSocket streaming endpoint
+/// WS /endpoints/:endpoint_name/stream — WebSocket streaming endpoint
 pub async fn websocket_handler(
     State(state): State<AppState>,
     Path(endpoint_name): Path<String>,
@@ -158,10 +167,10 @@ async fn handle_socket(mut socket: WebSocket, state: AppState, endpoint_name: St
                     };
 
                     let server_msg = ServerMessage::Message {
-                        message_id: msg.message_id,
+                        message_id: crypto::wire_message_id(&msg.message_id),
                         body: body_b64,
                         headers,
-                        received_at: msg.received_at.to_string(),
+                        received_at: queue::nanos_to_seconds(msg.received_at),
                         deliver_count: msg.deliver_count,
                     };
 
@@ -213,7 +222,18 @@ async fn handle_client_message(
 ) {
     match msg {
         ClientMessage::Ack { message_id } => {
-            match queue::ack(conn, &account.customer_id, endpoint_name, &message_id).await {
+            let raw_id = match crypto::parse_wire_message_id(&message_id) {
+                Ok(r) => r,
+                Err(e) => {
+                    let _ = send_json(
+                        socket,
+                        &ServerMessage::Error { reason: e.to_string() },
+                    )
+                    .await;
+                    return;
+                }
+            };
+            match queue::ack(conn, &account.customer_id, endpoint_name, &raw_id).await {
                 Ok(true) => {
                     let _ = send_json(socket, &ServerMessage::AckOk { message_id }).await;
                 }
@@ -239,20 +259,43 @@ async fn handle_client_message(
         }
         ClientMessage::Nack {
             message_id,
-            permanent,
+            disposition,
         } => {
+            let raw_id = match crypto::parse_wire_message_id(&message_id) {
+                Ok(r) => r,
+                Err(e) => {
+                    let _ = send_json(
+                        socket,
+                        &ServerMessage::Error { reason: e.to_string() },
+                    )
+                    .await;
+                    return;
+                }
+            };
+            let permanent = disposition == NackDisposition::Dlq;
             let _ = queue::nack(
                 conn,
                 &account.customer_id,
                 endpoint_name,
-                &message_id,
+                &raw_id,
                 permanent,
                 3,
             )
             .await;
         }
         ClientMessage::Heartbeat { message_id } => {
-            let _ = queue::heartbeat(conn, &message_id, 300).await;
+            let raw_id = match crypto::parse_wire_message_id(&message_id) {
+                Ok(r) => r,
+                Err(e) => {
+                    let _ = send_json(
+                        socket,
+                        &ServerMessage::Error { reason: e.to_string() },
+                    )
+                    .await;
+                    return;
+                }
+            };
+            let _ = queue::heartbeat(conn, &raw_id, 300).await;
         }
         ClientMessage::Auth { .. } => {
             let _ = send_json(
@@ -263,6 +306,45 @@ async fn handle_client_message(
             )
             .await;
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_nack_disposition_default_when_omitted() {
+        let msg: ClientMessage =
+            serde_json::from_str(r#"{"type":"nack","message_id":"msg_x"}"#).unwrap();
+        match msg {
+            ClientMessage::Nack { disposition, .. } => {
+                assert_eq!(disposition, NackDisposition::Requeue);
+            }
+            _ => panic!("expected Nack"),
+        }
+    }
+
+    #[test]
+    fn test_nack_disposition_dlq_parses() {
+        let msg: ClientMessage = serde_json::from_str(
+            r#"{"type":"nack","message_id":"msg_x","disposition":"dlq"}"#,
+        )
+        .unwrap();
+        match msg {
+            ClientMessage::Nack { disposition, .. } => {
+                assert_eq!(disposition, NackDisposition::Dlq);
+            }
+            _ => panic!("expected Nack"),
+        }
+    }
+
+    #[test]
+    fn test_nack_rejects_unknown_disposition() {
+        assert!(serde_json::from_str::<ClientMessage>(
+            r#"{"type":"nack","message_id":"msg_x","disposition":"foo"}"#,
+        )
+        .is_err());
     }
 }
 

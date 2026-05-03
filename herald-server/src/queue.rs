@@ -97,6 +97,17 @@ pub async fn check_queue_depth(
     Ok(depth < max_depth)
 }
 
+/// Current depth of the main queue (LLEN). Used to populate `queue_depth`
+/// in poll responses.
+pub async fn depth(
+    conn: &mut redis::aio::MultiplexedConnection,
+    customer_id: &str,
+    endpoint: &str,
+) -> Result<u64, HeraldError> {
+    let depth: u64 = conn.llen(queue_key(customer_id, endpoint)).await?;
+    Ok(depth)
+}
+
 /// Enqueue a message. Returns true if enqueued, false if deduplicated.
 pub async fn enqueue(
     conn: &mut redis::aio::MultiplexedConnection,
@@ -406,4 +417,18 @@ pub fn now_nanos() -> u128 {
         .duration_since(UNIX_EPOCH)
         .unwrap_or(Duration::ZERO)
         .as_nanos()
+}
+
+/// Get the current time in seconds since epoch (Unix integer).
+/// Used for wire-format timestamps; nanoseconds remain internal.
+pub fn now_seconds() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0)
+}
+
+/// Convert the internal nanosecond timestamp to Unix integer seconds.
+pub fn nanos_to_seconds(nanos: u128) -> i64 {
+    (nanos / 1_000_000_000) as i64
 }

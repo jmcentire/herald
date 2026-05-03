@@ -75,27 +75,30 @@ async fn main() {
             "/{customer_id}/{endpoint_name}",
             post(routes::ingest::ingest_webhook),
         )
-        // Agent polling and management (auth required)
-        .route("/queue/{endpoint_name}", get(routes::agent::poll_messages))
+        // Agent polling and management (auth required) — resource-oriented paths
         .route(
-            "/ack/{endpoint_name}/{message_id}",
-            post(routes::agent::ack_message),
+            "/endpoints/{endpoint_name}/messages",
+            get(routes::agent::poll_messages),
         )
         .route(
-            "/ack/{endpoint_name}",
+            "/endpoints/{endpoint_name}/messages/ack",
             post(routes::agent::batch_ack_messages),
         )
         .route(
-            "/nack/{endpoint_name}/{message_id}",
+            "/endpoints/{endpoint_name}/messages/{message_id}/ack",
+            post(routes::agent::ack_message),
+        )
+        .route(
+            "/endpoints/{endpoint_name}/messages/{message_id}/nack",
             post(routes::agent::nack_message),
         )
         .route(
-            "/heartbeat/{endpoint_name}/{message_id}",
+            "/endpoints/{endpoint_name}/messages/{message_id}/heartbeat",
             post(routes::agent::heartbeat),
         )
         // WebSocket streaming
         .route(
-            "/stream/{endpoint_name}",
+            "/endpoints/{endpoint_name}/stream",
             get(routes::websocket::websocket_handler),
         )
         // Landing page, API docs, and health check

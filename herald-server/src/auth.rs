@@ -21,6 +21,9 @@ pub struct Account {
     pub customer_id: String,
     pub tier: Tier,
     pub api_key: String,
+    /// Unix seconds when this account was first registered. May be 0
+    /// for accounts created before created_at was tracked.
+    pub created_at: i64,
 }
 
 /// Extract API key from Authorization header (Bearer token).
@@ -76,22 +79,26 @@ pub async fn lookup_account(
                 _ => Tier::Free,
             };
 
+            let created_at = val["created_at"].as_i64().unwrap_or(0);
+
             Ok(Account {
                 customer_id,
                 tier,
                 api_key: api_key.to_string(),
+                created_at,
             })
         }
         None => Err(HeraldError::Unauthorized("invalid API key".into())),
     }
 }
 
-/// Register an account in Redis.
+/// Register an account in Redis. Returns the created_at timestamp written.
 pub async fn register_account(
     conn: &mut redis::aio::MultiplexedConnection,
     api_key: &str,
     customer_id: &str,
     tier: Tier,
+    created_at: i64,
 ) -> Result<(), HeraldError> {
     let tier_str = match tier {
         Tier::Free => "free",
@@ -103,6 +110,7 @@ pub async fn register_account(
     let json = serde_json::json!({
         "customer_id": customer_id,
         "tier": tier_str,
+        "created_at": created_at,
     });
 
     let _: () = redis::cmd("SET")
