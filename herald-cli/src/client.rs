@@ -11,16 +11,24 @@ pub struct HeraldClient {
 
 #[derive(Debug, Deserialize)]
 pub struct PollResponse {
-    pub messages: Vec<QueueMessage>,
+    #[serde(default)]
+    pub data: Vec<QueueMessage>,
+    #[serde(default)]
+    pub has_more: bool,
+    #[serde(default)]
+    pub queue_depth: u64,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct QueueMessage {
+    /// Wire-format message id (e.g. `msg_<hex>`). Treat as opaque.
     pub message_id: String,
+    /// Wire-format fingerprint (e.g. `fp_<hex>`). Treat as opaque.
     pub fingerprint: String,
     pub body: String,
     pub headers: Option<serde_json::Value>,
-    pub received_at: String,
+    /// Unix integer seconds since epoch.
+    pub received_at: i64,
     pub deliver_count: u32,
     pub encryption: String,
     pub key_version: Option<String>,
@@ -29,6 +37,11 @@ pub struct QueueMessage {
 #[derive(Debug, Serialize)]
 struct BatchAckRequest {
     message_ids: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct NackBody {
+    disposition: &'static str,
 }
 
 impl HeraldClient {
@@ -53,7 +66,7 @@ impl HeraldClient {
         visibility_timeout: u64,
     ) -> Result<Vec<QueueMessage>, CliError> {
         let url = format!(
-            "{}/queue/{}?limit={}&visibility_timeout={}",
+            "{}/endpoints/{}/messages?limit={}&visibility_timeout={}",
             self.base_url, endpoint, limit, visibility_timeout
         );
 
@@ -64,10 +77,6 @@ impl HeraldClient {
             .send()
             .await
             .map_err(|e| CliError::Http(e.to_string()))?;
-
-        if resp.status() == reqwest::StatusCode::NO_CONTENT {
-            return Ok(vec![]);
-        }
 
         if !resp.status().is_success() {
             let status = resp.status();
@@ -80,12 +89,16 @@ impl HeraldClient {
             .await
             .map_err(|e| CliError::Http(e.to_string()))?;
 
-        Ok(poll_resp.messages)
+        Ok(poll_resp.data)
     }
 
-    /// Acknowledge a processed message.
+    /// Acknowledge a processed message. `message_id` should be the wire-format
+    /// id returned by `poll` (e.g. `msg_<hex>`).
     pub async fn ack(&self, endpoint: &str, message_id: &str) -> Result<(), CliError> {
-        let url = format!("{}/ack/{}/{}", self.base_url, endpoint, message_id);
+        let url = format!(
+            "{}/endpoints/{}/messages/{}/ack",
+            self.base_url, endpoint, message_id
+        );
 
         let resp = self
             .http
@@ -103,7 +116,8 @@ impl HeraldClient {
         Ok(())
     }
 
-    /// Negative-acknowledge a message (requeue or DLQ).
+    /// Negative-acknowledge a message. `permanent: true` routes to the DLQ;
+    /// `false` requeues for another attempt.
     pub async fn nack(
         &self,
         endpoint: &str,
@@ -111,14 +125,19 @@ impl HeraldClient {
         permanent: bool,
     ) -> Result<(), CliError> {
         let url = format!(
-            "{}/nack/{}/{}?permanent={}",
-            self.base_url, endpoint, message_id, permanent
+            "{}/endpoints/{}/messages/{}/nack",
+            self.base_url, endpoint, message_id
         );
+
+        let body = NackBody {
+            disposition: if permanent { "dlq" } else { "requeue" },
+        };
 
         let resp = self
             .http
             .post(&url)
             .header("Authorization", format!("Bearer {}", self.api_key))
+            .json(&body)
             .send()
             .await
             .map_err(|e| CliError::Http(e.to_string()))?;

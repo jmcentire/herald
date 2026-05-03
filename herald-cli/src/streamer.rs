@@ -11,9 +11,16 @@ use crate::handler;
 #[serde(tag = "type")]
 #[serde(rename_all = "snake_case")]
 enum ClientMsg {
-    Auth { api_key: String },
-    Ack { message_id: String },
-    Nack { message_id: String, permanent: bool },
+    Auth {
+        api_key: String,
+    },
+    Ack {
+        message_id: String,
+    },
+    Nack {
+        message_id: String,
+        disposition: &'static str,
+    },
 }
 
 #[derive(serde::Deserialize, Debug)]
@@ -26,7 +33,7 @@ enum ServerMsg {
         message_id: String,
         body: String,
         headers: Option<serde_json::Value>,
-        received_at: String,
+        received_at: i64,
         deliver_count: u32,
     },
     AckOk { message_id: String },
@@ -166,13 +173,15 @@ async fn run_single_stream(
                     Ok(hr) if hr.success => ClientMsg::Ack { message_id },
                     Ok(hr) => ClientMsg::Nack {
                         message_id,
-                        permanent: hr.permanent_failure,
+                        disposition: if hr.permanent_failure { "dlq" } else { "requeue" },
                     },
                     Err(e) => {
                         tracing::error!(error = %e, "handler error");
+                        let permanent =
+                            handler_config.on_failure == FailureAction::NackPermanent;
                         ClientMsg::Nack {
                             message_id,
-                            permanent: handler_config.on_failure == FailureAction::NackPermanent,
+                            disposition: if permanent { "dlq" } else { "requeue" },
                         }
                     }
                 };
@@ -207,7 +216,7 @@ fn build_ws_url(server: &str, endpoint: &str) -> String {
     let host = server
         .trim_start_matches("https://")
         .trim_start_matches("http://");
-    format!("{ws_scheme}://{host}/stream/{endpoint}")
+    format!("{ws_scheme}://{host}/endpoints/{endpoint}/stream")
 }
 
 #[cfg(test)]
@@ -218,7 +227,7 @@ mod tests {
     fn test_build_ws_url_https() {
         assert_eq!(
             build_ws_url("https://proxy.herald.tools", "github"),
-            "wss://proxy.herald.tools/stream/github"
+            "wss://proxy.herald.tools/endpoints/github/stream"
         );
     }
 
@@ -226,7 +235,7 @@ mod tests {
     fn test_build_ws_url_http() {
         assert_eq!(
             build_ws_url("http://localhost:8080", "test"),
-            "ws://localhost:8080/stream/test"
+            "ws://localhost:8080/endpoints/test/stream"
         );
     }
 }

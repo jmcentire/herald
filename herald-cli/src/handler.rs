@@ -206,7 +206,13 @@ async fn run_hook(
 }
 
 /// Render a template string with message variables.
-/// Supports: {{.body}}, {{.headers}}, {{.message_id}}, {{.endpoint}}, {{.received_at}}
+///
+/// Variables:
+///   {{.body}}         decrypted message body (UTF-8 text)
+///   {{.headers}}      JSON object of provider HTTP headers
+///   {{.message_id}}   unique delivery id (msg_<hex>) — scoped to endpoint+time+body
+///   {{.fingerprint}}  content-addressable body hash (fp_<hex>) — use for cross-delivery dedup
+///   {{.received_at}}  Herald receipt timestamp (Unix integer seconds)
 fn render_template(template: &str, msg: &QueueMessage, body: &str) -> String {
     let headers_str = msg
         .headers
@@ -218,8 +224,8 @@ fn render_template(template: &str, msg: &QueueMessage, body: &str) -> String {
         .replace("{{.body}}", body)
         .replace("{{.headers}}", &headers_str)
         .replace("{{.message_id}}", &msg.message_id)
-        .replace("{{.endpoint}}", &msg.fingerprint) // endpoint isn't in QueueMessage, use fingerprint context
-        .replace("{{.received_at}}", &msg.received_at)
+        .replace("{{.fingerprint}}", &msg.fingerprint)
+        .replace("{{.received_at}}", &msg.received_at.to_string())
 }
 
 #[cfg(test)]
@@ -228,11 +234,11 @@ mod tests {
 
     fn test_msg() -> QueueMessage {
         QueueMessage {
-            message_id: "abc123".into(),
-            fingerprint: "fp456".into(),
+            message_id: "msg_abc123".into(),
+            fingerprint: "fp_def456".into(),
             body: base64::engine::general_purpose::STANDARD.encode(b"hello world"),
             headers: Some(serde_json::json!({"content-type": "application/json"})),
-            received_at: "1234567890".into(),
+            received_at: 1_234_567_890,
             deliver_count: 1,
             encryption: "service".into(),
             key_version: None,
@@ -250,7 +256,21 @@ mod tests {
     fn test_render_template_message_id() {
         let msg = test_msg();
         let result = render_template("ID: {{.message_id}}", &msg, "");
-        assert_eq!(result, "ID: abc123");
+        assert_eq!(result, "ID: msg_abc123");
+    }
+
+    #[test]
+    fn test_render_template_fingerprint() {
+        let msg = test_msg();
+        let result = render_template("FP: {{.fingerprint}}", &msg, "");
+        assert_eq!(result, "FP: fp_def456");
+    }
+
+    #[test]
+    fn test_render_template_received_at() {
+        let msg = test_msg();
+        let result = render_template("T: {{.received_at}}", &msg, "");
+        assert_eq!(result, "T: 1234567890");
     }
 
     #[test]
@@ -268,6 +288,6 @@ mod tests {
             &msg,
             "the payload",
         );
-        assert_eq!(result, "Use kindex for abc123. Body: the payload");
+        assert_eq!(result, "Use kindex for msg_abc123. Body: the payload");
     }
 }
