@@ -1,89 +1,89 @@
 - id: C001
-  boundary: "Message delivery semantics"
-  condition: "All messages must be delivered at least once with FIFO ordering within endpoint"
-  violation: "Message loss or out-of-order delivery"
+  boundary: "Message encryption"
+  condition: "Herald MUST never access plaintext message body after encryption step"
+  violation: "Plaintext body visible to Herald components post-encryption"
   severity: must
-  rationale: "Core reliability guarantee for webhook relay"
-  classification_tier: null
-  affected_components: ["queue-manager", "agent-api", "storage-backend"]
+  rationale: "Core BYOK security guarantee"
+  classification_tier: PII
+  affected_components: ["crypto_module", "queue_module", "agent_module"]
 
 - id: C002
-  boundary: "Payload encryption"
-  condition: "All webhook payloads must be encrypted at rest within RAM visibility window"
-  violation: "Plaintext payload storage or extended RAM exposure"
+  boundary: "Message ordering"
+  condition: "Messages within single endpoint MUST be delivered in FIFO order"
+  violation: "Messages delivered out of order within endpoint"
   severity: must
-  rationale: "Security requirement for sensitive webhook data"
-  classification_tier: PII
-  affected_components: ["encryption-service", "storage-backend"]
+  rationale: "Webhook processing often depends on event ordering"
+  classification_tier: null
+  affected_components: ["queue_module"]
 
 - id: C003
-  boundary: "Rate limiting"
-  condition: "Free tier limited to 100 messages/day, Standard to 10K/day, Pro to 500K/day"
-  violation: "Tier limits exceeded without HTTP 429 response"
+  boundary: "Single authoritative backend"
+  condition: "Exactly one storage backend MUST be authoritative per running herald-server instance"
+  violation: "Multiple backends serve conflicting state for the same message_id"
   severity: must
-  rationale: "Business model enforcement and abuse prevention"
+  rationale: "There is no multi-backend coherence layer; the spec's pluggable backends are swappable adapters, not simultaneous. Production runs Redis only."
   classification_tier: null
-  affected_components: ["api-gateway", "auth-service"]
+  affected_components: ["queue_module", "redis"]
 
 - id: C004
-  boundary: "Queue depth limits"
-  condition: "Queue depth must not exceed tier-specific limits"
-  violation: "Queue overflow causing message rejection"
+  boundary: "Tier isolation"
+  condition: "Free tier abuse MUST NOT degrade paid tier service"
+  violation: "Free tier load impacts paid tier response times or availability"
   severity: must
-  rationale: "Resource protection and service availability"
+  rationale: "Revenue protection and SLA compliance"
   classification_tier: null
-  affected_components: ["queue-manager", "storage-backend"]
+  affected_components: ["ingest_module", "queue_module"]
 
 - id: C005
-  boundary: "Message deduplication"
-  condition: "Identical payloads must be deduplicated using SHA-256 fingerprints within retention window"
-  violation: "Duplicate message delivery for identical content"
+  boundary: "Content addressable IDs"
+  condition: "Message IDs MUST be content-addressable for deduplication"
+  violation: "Identical payloads receive different message IDs"
   severity: must
-  rationale: "Prevent replay attacks and reduce storage overhead"
+  rationale: "Enables built-in deduplication within retention window"
   classification_tier: null
-  affected_components: ["encryption-service", "queue-manager"]
+  affected_components: ["ingest_module"]
 
 - id: C006
-  boundary: "Authentication security"
-  condition: "API keys must not be transmitted in WebSocket query parameters"
-  violation: "API key exposure in connection logs or proxies"
+  boundary: "Visibility timeout"
+  condition: "Messages MUST become visible again after timeout if not ACKed"
+  violation: "Messages permanently invisible without ACK or become visible before timeout"
   severity: must
-  rationale: "Security best practices for credential transmission"
-  classification_tier: AUTH
-  affected_components: ["agent-api", "auth-service"]
+  rationale: "Ensures message delivery despite agent failures"
+  classification_tier: null
+  affected_components: ["queue_module", "agent_module"]
 
 - id: C007
-  boundary: "BYOK key isolation"
-  condition: "Customer BYOK keys must never be logged or transmitted to Herald infrastructure"
-  violation: "Customer key exposure or Herald access to plaintext"
+  boundary: "Rate limiting"
+  condition: "Rate limits MUST be enforced at ingestion edge per tier"
+  violation: "Requests exceed tier limits without HTTP 429 response"
   severity: must
-  rationale: "Zero-trust encryption model requirement"
-  classification_tier: AUTH
-  affected_components: ["encryption-service"]
+  rationale: "Prevents system overload and ensures tier boundaries"
+  classification_tier: null
+  affected_components: ["ingest_module", "queue_module"]
 
 - id: C008
-  boundary: "Visibility timeout recovery"
-  condition: "Messages must be redelivered after visibility timeout expiration"
-  violation: "Lost messages due to agent crashes without recovery"
-  severity: must
-  rationale: "At-least-once delivery guarantee implementation"
-  classification_tier: null
-  affected_components: ["queue-manager", "agent-api"]
+  boundary: "Header preservation"
+  condition: "Webhook headers SHOULD be preserved for signature verification"
+  violation: "Headers modified or lost, preventing agent signature verification"
+  severity: should
+  rationale: "Required for webhook authenticity verification"
+  classification_tier: AUTH
+  affected_components: ["ingest_module", "redis"]
 
 - id: C009
-  boundary: "Dead letter queue"
-  condition: "Messages exceeding max retry threshold must move to DLQ"
-  violation: "Infinite retry loops or message loss"
+  boundary: "Binary compatibility"
+  condition: "System MUST compile to single static binary"
+  violation: "Deployment requires multiple binaries or dynamic dependencies"
   severity: must
-  rationale: "System stability and message observability"
+  rationale: "Simplifies deployment and meets cross-platform requirement"
   classification_tier: null
-  affected_components: ["queue-manager", "storage-backend"]
+  affected_components: ["all"]
 
 - id: C010
-  boundary: "Payload content blindness"
-  condition: "Herald must never inspect, parse, or route based on payload contents"
-  violation: "Content-aware processing or routing logic"
+  boundary: "Delivery semantics"
+  condition: "System MUST provide at-least-once delivery guarantees"
+  violation: "Messages enqueued but never delivered to any agent before retention expires"
   severity: must
-  rationale: "Pure relay abstraction and security isolation"
+  rationale: "Webhook reliability — agents implement idempotency to handle the duplicates this admits. Exactly-once is impossible in distributed systems (FLP)."
   classification_tier: null
-  affected_components: ["api-gateway", "queue-manager", "agent-api"]
+  affected_components: ["queue_module", "agent_module", "websocket_module"]

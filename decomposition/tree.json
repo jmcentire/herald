@@ -1,0 +1,322 @@
+{
+  "root_id": "root",
+  "nodes": {
+    "root": {
+      "component_id": "root",
+      "name": "Project Root",
+      "description": "Adopted codebase at /Users/jmcentire/Code/herald",
+      "depth": 0,
+      "parent_id": "",
+      "children": [
+        "herald-cli",
+        "herald-server"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "herald-cli": {
+      "component_id": "herald-cli",
+      "name": "Herald-Cli",
+      "description": "Package: herald-cli",
+      "depth": 1,
+      "parent_id": "root",
+      "children": [
+        "herald-cli_src"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "herald-cli_src": {
+      "component_id": "herald-cli_src",
+      "name": "Src",
+      "description": "Package: herald-cli/src",
+      "depth": 2,
+      "parent_id": "herald-cli",
+      "children": [
+        "herald-cli_src_client",
+        "herald-cli_src_config",
+        "herald-cli_src_error",
+        "herald-cli_src_handler",
+        "herald-cli_src_main",
+        "herald-cli_src_poller",
+        "herald-cli_src_streamer"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "herald-cli_src_client": {
+      "component_id": "herald-cli_src_client",
+      "name": "Client",
+      "description": "Module herald-cli/src/client.rs: new, poll, ack, nack, base_url (+7 more)",
+      "depth": 3,
+      "parent_id": "herald-cli_src",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "herald-cli_src_config": {
+      "component_id": "herald-cli_src_config",
+      "name": "Config",
+      "description": "Module herald-cli/src/config.rs: default_connection, default_poll_interval, default_max_concurrent, default_stdin, default_on_failure (+19 more)",
+      "depth": 3,
+      "parent_id": "herald-cli_src",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "herald-cli_src_error": {
+      "component_id": "herald-cli_src_error",
+      "name": "Error",
+      "description": "Module herald-cli/src/error.rs: CliError",
+      "depth": 3,
+      "parent_id": "herald-cli_src",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "herald-cli_src_handler": {
+      "component_id": "herald-cli_src_handler",
+      "name": "Handler",
+      "description": "Module herald-cli/src/handler.rs: run_handler, run_hook, render_template, test_msg, test_render_template_body (+6 more)",
+      "depth": 3,
+      "parent_id": "herald-cli_src",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "herald-cli_src_main": {
+      "component_id": "herald-cli_src_main",
+      "name": "Main",
+      "description": "Module herald-cli/src/main.rs: main, Cli, Commands",
+      "depth": 3,
+      "parent_id": "herald-cli_src",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "herald-cli_src_poller": {
+      "component_id": "herald-cli_src_poller",
+      "name": "Poller",
+      "description": "Module herald-cli/src/poller.rs: run",
+      "depth": 3,
+      "parent_id": "herald-cli_src",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "herald-cli_src_streamer": {
+      "component_id": "herald-cli_src_streamer",
+      "name": "Streamer",
+      "description": "Module herald-cli/src/streamer.rs: run, run_single_stream, build_ws_url, test_build_ws_url_https, test_build_ws_url_http (+2 more)",
+      "depth": 3,
+      "parent_id": "herald-cli_src",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "herald-server": {
+      "component_id": "herald-server",
+      "name": "Herald-Server",
+      "description": "Package: herald-server",
+      "depth": 1,
+      "parent_id": "root",
+      "children": [
+        "herald-server_src"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "herald-server_src": {
+      "component_id": "herald-server_src",
+      "name": "Src",
+      "description": "Package: herald-server/src",
+      "depth": 2,
+      "parent_id": "herald-server",
+      "children": [
+        "herald-server_src_auth",
+        "herald-server_src_billing",
+        "herald-server_src_config",
+        "herald-server_src_crypto",
+        "herald-server_src_error",
+        "herald-server_src_main",
+        "herald-server_src_pages",
+        "herald-server_src_queue",
+        "herald-server_src_state",
+        "herald-server_src_routes"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "herald-server_src_auth": {
+      "component_id": "herald-server_src_auth",
+      "name": "Auth",
+      "description": "Module herald-server/src/auth.rs: extract_api_key, extract_bearer_from_headers, lookup_account, register_account, store_ingest_auth (+36 more)",
+      "depth": 3,
+      "parent_id": "herald-server_src",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "herald-server_src_billing": {
+      "component_id": "herald-server_src_billing",
+      "name": "Billing",
+      "description": "Module herald-server/src/billing.rs: tier_to_price, tier_price_label, upgrade_tier, parse_tier, get_billing (+5 more)",
+      "depth": 3,
+      "parent_id": "herald-server_src",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "herald-server_src_config": {
+      "component_id": "herald-server_src_config",
+      "name": "Config",
+      "description": "Module herald-server/src/config.rs: limits, from_env, Config, TierLimits, Tier (+2 more)",
+      "depth": 3,
+      "parent_id": "herald-server_src",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "herald-server_src_crypto": {
+      "component_id": "herald-server_src_crypto",
+      "name": "Crypto",
+      "description": "Module herald-server/src/crypto.rs: fingerprint, message_id, wire_message_id, wire_fingerprint, parse_wire_message_id (+19 more)",
+      "depth": 3,
+      "parent_id": "herald-server_src",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "herald-server_src_error": {
+      "component_id": "herald-server_src_error",
+      "name": "Error",
+      "description": "Module herald-server/src/error.rs: into_response, HeraldError, IntoResponse",
+      "depth": 3,
+      "parent_id": "herald-server_src",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "herald-server_src_main": {
+      "component_id": "herald-server_src_main",
+      "name": "Main",
+      "description": "Module herald-server/src/main.rs: main, health_check",
+      "depth": 3,
+      "parent_id": "herald-server_src",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "herald-server_src_pages": {
+      "component_id": "herald-server_src_pages",
+      "name": "Pages",
+      "description": "Module herald-server/src/pages.rs: landing_page, docs_page",
+      "depth": 3,
+      "parent_id": "herald-server_src",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "herald-server_src_queue": {
+      "component_id": "herald-server_src_queue",
+      "name": "Queue",
+      "description": "Module herald-server/src/queue.rs: queue_key, inflight_key, dead_key, meta_key, dedup_key (+18 more)",
+      "depth": 3,
+      "parent_id": "herald-server_src",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "herald-server_src_state": {
+      "component_id": "herald-server_src_state",
+      "name": "State",
+      "description": "Module herald-server/src/state.rs: AppState",
+      "depth": 3,
+      "parent_id": "herald-server_src",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "herald-server_src_routes": {
+      "component_id": "herald-server_src_routes",
+      "name": "Routes",
+      "description": "Package: herald-server/src/routes",
+      "depth": 3,
+      "parent_id": "herald-server_src",
+      "children": [
+        "herald-server_src_routes_agent",
+        "herald-server_src_routes_ingest",
+        "herald-server_src_routes_register",
+        "herald-server_src_routes_websocket"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "herald-server_src_routes_agent": {
+      "component_id": "herald-server_src_routes_agent",
+      "name": "Agent",
+      "description": "Module herald-server/src/routes/agent.rs: default_limit, default_visibility_timeout, poll_messages, ack_message, batch_ack_messages (+12 more)",
+      "depth": 4,
+      "parent_id": "herald-server_src_routes",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "herald-server_src_routes_ingest": {
+      "component_id": "herald-server_src_routes_ingest",
+      "name": "Ingest",
+      "description": "Module herald-server/src/routes/ingest.rs: ingest_webhook, serialize_headers, lookup_tier",
+      "depth": 4,
+      "parent_id": "herald-server_src_routes",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "herald-server_src_routes_register": {
+      "component_id": "herald-server_src_routes_register",
+      "name": "Register",
+      "description": "Module herald-server/src/routes/register.rs: register, validate_customer_id, client_ip, enforce_register_rate_limit, test_validate_customer_id_accepts_simple (+11 more)",
+      "depth": 4,
+      "parent_id": "herald-server_src_routes",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "herald-server_src_routes_websocket": {
+      "component_id": "herald-server_src_routes_websocket",
+      "name": "Websocket",
+      "description": "Module herald-server/src/routes/websocket.rs: websocket_handler, handle_socket, authenticate, handle_client_message, test_nack_disposition_default_when_omitted (+6 more)",
+      "depth": 4,
+      "parent_id": "herald-server_src_routes",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    }
+  }
+}

@@ -1,0 +1,53 @@
+version: "1.0"
+generated_by: constrain
+session_id: herald_webhook_relay_001
+
+storage_backends:
+  - owner_component: "redis"
+    type: redis
+    description: "Primary storage for hosted service message queues and rate limit state"
+  
+  - owner_component: "redis"
+    type: postgres
+    description: "Alternative relational backend for self-hosted deployments"
+  
+  - owner_component: "redis"
+    type: sqlite
+    description: "Embedded storage for single-instance deployments"
+
+field_hints:
+  - backend_owner: "redis"
+    field_description: "Encrypted webhook request body using customer BYOK keys"
+    likely_classification: PII
+    likely_annotations: ["encrypted_at_rest", "gdpr_erasable", "byok_encrypted"]
+    rationale: "Contains user data, requires customer encryption and GDPR compliance"
+  
+  - backend_owner: "redis"
+    field_description: "Webhook headers containing signatures and auth tokens"
+    likely_classification: AUTH
+    likely_annotations: ["audit_field", "encrypted_at_rest"]
+    rationale: "Authentication tokens require audit trail and encryption"
+  
+  - backend_owner: "redis"
+    field_description: "Content-addressable message identifiers for deduplication"
+    likely_classification: PUBLIC
+    likely_annotations: ["immutable", "audit_field"]
+    rationale: "Public IDs should be immutable and auditable for integrity"
+  
+  - backend_owner: "redis"
+    field_description: "API keys for webhook endpoint authentication"
+    likely_classification: AUTH
+    likely_annotations: ["encrypted_at_rest", "audit_field"]
+    rationale: "API keys provide system access and require encryption plus audit"
+  
+  - backend_owner: "redis"
+    field_description: "Rate limit configurations and current usage counters per tier"
+    likely_classification: COMPLIANCE
+    likely_annotations: ["audit_field", "immutable"]
+    rationale: "Rate limits enforce SLA compliance and require audit trail"
+  
+  - backend_owner: "redis"
+    field_description: "Message delivery count and visibility timeout state"
+    likely_classification: PUBLIC
+    likely_annotations: ["operational_metadata"]
+    rationale: "Operational counters used to enforce at-least-once delivery; not financial."

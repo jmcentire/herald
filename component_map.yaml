@@ -1,107 +1,330 @@
 version: "1.0"
 generated_by: constrain
-session_id: herald_relay_system
+session_id: herald_webhook_relay_001
+# Hand-corrected after synthesis: the auto-generated map invented a
+# microservice topology with internal gRPC. Herald is a single Rust
+# binary (herald-server) plus an optional Rust CLI binary (herald-cli);
+# what was modeled as "services" are in fact internal modules of one
+# process sharing memory, with Redis as the only out-of-process datastore.
 
 components:
-  - name: "api-gateway"
-    description: "Handles webhook ingestion, rate limiting, and initial authentication"
-    type: ingress
+  - name: "herald_server"
+    description: "Single Rust binary (tokio + axum). Hosts every public HTTP/WS endpoint, talks to Redis, and runs the visibility-timeout reaper as an in-process task."
+    type: service
     port: 8080
     protocol: http
     data_access:
-      reads: [PUBLIC]
-      writes: [PII, PUBLIC]
-      rationale: "Receives webhook payloads and writes them for encryption"
+      reads: [AUTH, PUBLIC]
+      writes: [PII, AUTH, PUBLIC]
+      rationale: "Validates API keys and ingest auth, encrypts and persists message bodies, serves them back to authenticated agents."
     authority:
-      domains: []
-      rationale: null
-    dependencies: ["auth-service", "encryption-service"]
-    constraints: ["C001", "C003", "C010"]
+      domains: ["webhook_ingestion", "message_id_generation", "encryption", "queue_state", "rate_limiting", "registration"]
+      rationale: "Owns the entire wire-side surface and the queue lifecycle."
+    dependencies: ["redis"]
+    constraints: ["C001", "C002", "C004", "C005", "C006", "C007", "C008", "C009", "C010"]
 
-  - name: "auth-service"
-    description: "Manages API keys, user credentials, and tier-based permissions"
-    type: service
-    port: 8081
-    protocol: http
+  - name: "ingest_module"
+    description: "herald-server::routes::ingest — handles POST /{customer_id}/{endpoint_name}: validates ingest auth, enforces rate/payload/queue-depth limits, computes fingerprint + message_id, encrypts body, enqueues."
+    type: module
+    port: null
+    protocol: in_process
+    data_access:
+      reads: [AUTH]
+      writes: [PII, PUBLIC]
+      rationale: "Reads optional per-customer ingest auth; writes encrypted body and message_id to the queue."
+    authority:
+      domains: ["webhook_ingestion", "rate_validation", "fingerprint", "message_id"]
+      rationale: "Sole entry point for provider webhooks."
+    dependencies: ["queue_module", "crypto_module", "auth_module"]
+    constraints: ["C004", "C005", "C007", "C008"]
+
+  - name: "agent_module"
+    description: "herald-server::routes::agent — handles GET /endpoints/{ep}/messages, POST .../{id}/ack, POST .../messages/ack (batch), POST .../{id}/nack, POST .../{id}/heartbeat. Decrypts on the way out."
+    type: module
+    port: null
+    protocol: in_process
+    data_access:
+      reads: [PII, AUTH, PUBLIC]
+      writes: [PUBLIC]
+      rationale: "Decrypts queued bodies for delivery; updates inflight/visibility state on ACK/NACK/heartbeat."
+    authority:
+      domains: ["polling", "acknowledgement", "visibility_extension", "nack_disposition"]
+      rationale: "Owns the agent-side request lifecycle."
+    dependencies: ["queue_module", "crypto_module", "auth_module"]
+    constraints: ["C001", "C006", "C010"]
+
+  - name: "websocket_module"
+    description: "herald-server::routes::websocket — handles WS /endpoints/{ep}/stream. First-message auth, polls queue every 1s and pushes; accepts ack/nack/heartbeat frames."
+    type: module
+    port: null
+    protocol: in_process
+    data_access:
+      reads: [PII, AUTH, PUBLIC]
+      writes: [PUBLIC]
+      rationale: "Streams decrypted messages to authenticated agents over a long-lived connection."
+    authority:
+      domains: ["streaming", "first_message_auth"]
+      rationale: "Owns the WebSocket protocol and its 5s auth timeout."
+    dependencies: ["queue_module", "crypto_module", "auth_module"]
+    constraints: ["C001", "C006", "C010"]
+
+  - name: "register_module"
+    description: "herald-server::routes::register — handles POST /register. Validates customer_id, enforces per-IP rate limit, generates hrl_sk_ API key, persists ingest_auth and customer config."
+    type: module
+    port: null
+    protocol: in_process
     data_access:
       reads: [AUTH]
       writes: [AUTH]
-      rationale: "Owns authentication and authorization data"
+      rationale: "Issues API keys and stores per-customer auth/config."
     authority:
-      domains: ["user_credentials", "api_key", "authentication_state"]
-      rationale: "Authoritative source for all authentication data"
-    dependencies: ["storage-backend"]
-    constraints: ["C003", "C006", "C007"]
+      domains: ["account_creation", "api_key_issuance", "register_rate_limit"]
+      rationale: "Sole path for programmatic account provisioning."
+    dependencies: ["auth_module"]
+    constraints: ["C007"]
 
-  - name: "encryption-service"
-    description: "Encrypts webhook payloads and manages BYOK key references"
-    type: service
-    port: 8082
-    protocol: http
-    data_access:
-      reads: [PII, AUTH]
-      writes: [PII, AUTH]
-      rationale: "Encrypts sensitive payloads and manages encryption keys"
-    authority:
-      domains: ["webhook_payload_body", "webhook_headers", "byok_key_reference", "encryption_state"]
-      rationale: "Authoritative for encrypted data and key management"
-    dependencies: ["storage-backend"]
-    constraints: ["C002", "C005", "C007"]
-
-  - name: "queue-manager"
-    description: "Maintains FIFO ordering, visibility timeouts, and message lifecycle"
-    type: service
-    port: 8083
-    protocol: http
-    data_access:
-      reads: [PUBLIC, PII]
-      writes: [PUBLIC]
-      rationale: "Manages message ordering and delivery state"
-    authority:
-      domains: ["message_id", "queue_state", "delivery_state", "message_ordering"]
-      rationale: "Authoritative for message lifecycle and delivery guarantees"
-    dependencies: ["storage-backend"]
-    constraints: ["C001", "C004", "C005", "C008", "C009"]
-
-  - name: "storage-backend"
-    description: "Pluggable persistence layer supporting multiple storage engines"
-    type: service
+  - name: "billing_module"
+    description: "herald-server::billing — handles GET /account/billing, POST /account/tier, POST /stripe/webhook. Stripe integration for tier changes."
+    type: module
     port: null
-    protocol: tcp
+    protocol: in_process
     data_access:
-      reads: [PUBLIC, PII, AUTH]
-      writes: [PUBLIC, PII, AUTH]
-      rationale: "Provides durable storage for all system data"
+      reads: [AUTH, COMPLIANCE]
+      writes: [COMPLIANCE]
+      rationale: "Reads account identity; writes tier state and persists Stripe references."
     authority:
-      domains: []
-      rationale: null
+      domains: ["tier_management", "stripe_webhook_processing"]
+      rationale: "Sole owner of billing state."
+    dependencies: ["auth_module"]
+    constraints: []
+
+  - name: "queue_module"
+    description: "herald-server::queue — Redis-backed FIFO queue, inflight tracking, dedup set, DLQ, visibility-timeout reaper. Encapsulates all Redis schema (queue:, inflight:, dead:, meta:, dedup:, visibility:, rate: keys)."
+    type: module
+    port: null
+    protocol: in_process
+    data_access:
+      reads: [PII, AUTH, PUBLIC]
+      writes: [PII, AUTH, PUBLIC]
+      rationale: "Owns the persistence shape; modules above only see typed Message structs."
+    authority:
+      domains: ["fifo_ordering", "visibility_timeout", "dedup_window", "deliver_count", "dlq_routing"]
+      rationale: "Single point of truth for queue semantics."
+    dependencies: ["redis"]
+    constraints: ["C002", "C003", "C006", "C010"]
+
+  - name: "crypto_module"
+    description: "herald-server::crypto — SHA-256 fingerprint and message_id, AES-256-GCM encrypt/decrypt with the service key, wire-format ID helpers (msg_/fp_ prefix + parse)."
+    type: module
+    port: null
+    protocol: in_process
+    data_access:
+      reads: [PII]
+      writes: [PII]
+      rationale: "Sees plaintext during the brief ingest RAM window; never persists it."
+    authority:
+      domains: ["hashing", "encryption", "wire_id_format"]
+      rationale: "Single source of all cryptographic operations."
     dependencies: []
-    constraints: ["C002", "C004", "C009"]
+    constraints: ["C001"]
 
-  - name: "agent-api"
-    description: "Serves agents via HTTP polling and WebSocket streaming"
-    type: egress
-    port: 8084
-    protocol: http
+  - name: "auth_module"
+    description: "herald-server::auth — Bearer API-key extraction, account lookup, per-customer ingest auth (Bearer or HMAC-SHA256), customer config (encryption mode, retention override)."
+    type: module
+    port: null
+    protocol: in_process
     data_access:
-      reads: [PUBLIC, PII]
-      writes: [PUBLIC]
-      rationale: "Delivers encrypted messages to agents"
+      reads: [AUTH]
+      writes: [AUTH]
+      rationale: "Owns the API-key keyspace and ingest-auth verification."
     authority:
-      domains: []
-      rationale: null
-    dependencies: ["auth-service", "queue-manager", "encryption-service"]
-    constraints: ["C001", "C006", "C008", "C010"]
+      domains: ["api_key_validation", "ingest_auth", "customer_config"]
+      rationale: "Single source of authorization decisions."
+    dependencies: ["redis"]
+    constraints: ["C008"]
 
-  - name: "cli-daemon"
-    description: "Local herald-cli daemon for executing webhook handlers"
+  - name: "error_module"
+    description: "herald-server::error — HeraldError enum and IntoResponse impl. Emits structured {error:{type,code,message}} bodies with Retry-After on 429s."
+    type: module
+    port: null
+    protocol: in_process
+    data_access:
+      reads: []
+      writes: []
+      rationale: "Pure mapping from internal error variants to HTTP responses."
+    authority:
+      domains: ["error_response_shape", "status_code_mapping"]
+      rationale: "Single source of error wire format."
+    dependencies: []
+    constraints: ["C007"]
+
+  - name: "pages_module"
+    description: "herald-server::pages — embedded HTML for GET / (landing) and GET /docs (API reference); GET /health."
+    type: module
+    port: null
+    protocol: in_process
+    data_access:
+      reads: []
+      writes: []
+      rationale: "Static content."
+    authority:
+      domains: ["public_documentation"]
+      rationale: "Self-contained landing and docs."
+    dependencies: []
+    constraints: []
+
+  - name: "herald_cli"
+    description: "Optional Rust binary. Polls or WS-streams from a herald-server instance, decodes the new envelope/prefixed-ID shapes, and invokes user-configured local handlers (with stdin payload, no shell interpolation), reporting ACK/NACK back."
     type: worker
     port: null
     protocol: http
     data_access:
-      reads: [PII]
+      reads: [PII, AUTH, PUBLIC]
       writes: [PUBLIC]
-      rationale: "Processes delivered messages and sends ACK/NACK responses"
+      rationale: "Consumes decrypted messages on behalf of the local agent; only writes ACK/NACK signals back to herald-server."
+    authority:
+      domains: ["local_handler_invocation", "template_rendering"]
+      rationale: "Owns the local execution model; herald-server has no opinion on what runs."
+    dependencies: ["herald_server"]
+    constraints: ["C001", "C009"]
+
+  - name: "redis"
+    description: "External datastore. The only authoritative storage backend in production. (SPEC mentions PostgreSQL/SQLite/filesystem as future swappable adapters; not implemented today.)"
+    type: external_datastore
+    port: 6379
+    protocol: redis
+    data_access:
+      reads: [PII, AUTH, PUBLIC, COMPLIANCE]
+      writes: [PII, AUTH, PUBLIC, COMPLIANCE]
+      rationale: "Persists encrypted message bodies, queue state, dedup sets, rate counters, account records."
     authority:
       domains: []
       rationale: null
+    dependencies: []
+    constraints: ["C003"]
+
+  - name: "fly_io_runtime"
+    description: "Hosted-service deployment substrate (Dockerfile + fly.toml). Two machines, rolling deploys, /health checks every 30s, auto-stop when idle."
+    type: external_runtime
+    port: null
+    protocol: tcp
+    data_access:
+      reads: []
+      writes: []
+      rationale: "Operational substrate, no application data access."
+    authority:
+      domains: ["deployment", "tls_termination"]
+      rationale: "Owns the production process lifecycle for proxy.herald.tools."
+    dependencies: ["herald_server"]
+    constraints: ["C009"]
+
+edges:
+  # External in
+  - from: "webhook_provider"
+    to: "ingest_module"
+    protocol: https
+    description: "Provider POSTs webhook payload."
+
+  - from: "agent"
+    to: "agent_module"
+    protocol: https
+    description: "Agent polls /endpoints/{ep}/messages, ACKs and NACKs."
+
+  - from: "agent"
+    to: "websocket_module"
+    protocol: wss
+    description: "Agent streams via /endpoints/{ep}/stream."
+
+  - from: "operator"
+    to: "register_module"
+    protocol: https
+    description: "Operator (or self-registration) provisions an account at /register."
+
+  - from: "stripe"
+    to: "billing_module"
+    protocol: https
+    description: "Stripe POSTs subscription/customer events to /stripe/webhook."
+
+  # Internal (in-process function calls, no network)
+  - from: "ingest_module"
+    to: "auth_module"
+    protocol: in_process
+    description: "Loads per-customer ingest auth + customer config, validates request."
+
+  - from: "ingest_module"
+    to: "crypto_module"
+    protocol: in_process
+    description: "Computes fingerprint and message_id, encrypts body."
+
+  - from: "ingest_module"
+    to: "queue_module"
+    protocol: in_process
+    description: "Enqueues Message struct."
+
+  - from: "agent_module"
+    to: "auth_module"
+    protocol: in_process
+    description: "Resolves Bearer API key to Account."
+
+  - from: "agent_module"
+    to: "queue_module"
+    protocol: in_process
+    description: "fetch / ack / nack / heartbeat."
+
+  - from: "agent_module"
+    to: "crypto_module"
+    protocol: in_process
+    description: "Decrypts body and headers before serializing the response."
+
+  - from: "websocket_module"
+    to: "auth_module"
+    protocol: in_process
+    description: "First-message auth resolves API key to Account."
+
+  - from: "websocket_module"
+    to: "queue_module"
+    protocol: in_process
+    description: "Polls queue every 1s; relays ack/nack/heartbeat frames."
+
+  - from: "websocket_module"
+    to: "crypto_module"
+    protocol: in_process
+    description: "Decrypts each pushed message."
+
+  - from: "register_module"
+    to: "auth_module"
+    protocol: in_process
+    description: "Persists account, API key, ingest auth, customer config."
+
+  # External out
+  - from: "queue_module"
+    to: "redis"
+    protocol: redis
+    description: "All queue, inflight, dedup, meta, visibility, rate keys."
+
+  - from: "auth_module"
+    to: "redis"
+    protocol: redis
+    description: "apikey:, customer_apikey:, ingest_auth:, config: keys."
+
+  - from: "billing_module"
+    to: "stripe_api"
+    protocol: https
+    description: "Tier change → Stripe subscription update."
+
+  # Operational background
+  - from: "herald_server"
+    to: "queue_module"
+    protocol: in_process
+    description: "Reaper task tick (every 10s) — scans inflight:* for expired visibility keys and NACKs."
+
+  # CLI
+  - from: "herald_cli"
+    to: "agent_module"
+    protocol: https
+    description: "Polls and ACK/NACKs over HTTPS."
+
+  - from: "herald_cli"
+    to: "websocket_module"
+    protocol: wss
+    description: "Streams over WSS as an alternative to polling."
