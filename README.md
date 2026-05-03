@@ -25,7 +25,7 @@ GitHub/Stripe/etc.  ──POST──▶  Herald  ◀──poll/ws──  Your Ag
 curl -X POST https://proxy.herald.tools/register \
   -H "Content-Type: application/json" \
   -d '{"customer_id":"myagent"}'
-# → {"customer_id":"myagent","api_key":"hrl_sk_...","created":true}
+# → 201 {"object":"account","customer_id":"myagent","api_key":"hrl_sk_...","created":1775183297}
 
 # 1b. (Optional) Register with ingest auth — providers must authenticate
 curl -X POST https://proxy.herald.tools/register \
@@ -39,11 +39,18 @@ curl -X POST https://proxy.herald.tools/myagent/github \
 
 # 3. Poll for messages (auth required)
 curl -H "Authorization: Bearer $API_KEY" \
-  https://proxy.herald.tools/queue/github
+  https://proxy.herald.tools/endpoints/github/messages
+# → {"object":"list","data":[{"object":"message","message_id":"msg_...","body":"...","received_at":1775183297,...}],"has_more":false,"queue_depth":0}
 
 # 4. Acknowledge processed messages
 curl -X POST -H "Authorization: Bearer $API_KEY" \
-  https://proxy.herald.tools/ack/github/<message_id>
+  https://proxy.herald.tools/endpoints/github/messages/<msg_id>/ack
+
+# 5. NACK to retry, or to send to the DLQ
+curl -X POST -H "Authorization: Bearer $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"disposition":"requeue"}' \
+  https://proxy.herald.tools/endpoints/github/messages/<msg_id>/nack
 ```
 
 ## Self-hosting

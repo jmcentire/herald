@@ -156,17 +156,17 @@ footer .bottom span{font-family:var(--font-mono);font-size:.6875rem;color:var(--
     <div><span class="comment"># Point any webhook at your Herald URL</span></div>
     <div><span class="prompt">$ </span><span class="cmd">curl -X POST https://proxy.herald.tools/myagent/github \</span></div>
     <div><span class="cmd">    -d '{"action":"push","ref":"refs/heads/main"}'</span></div>
-    <div><span class="out">{"message_id":"422609...","fingerprint":"e3d03e..."}</span></div>
+    <div><span class="out">{"object":"ingest_result","message_id":"msg_422609...","fingerprint":"fp_e3d03e..."}</span></div>
     <div>&nbsp;</div>
     <div><span class="comment"># Your agent polls when it's ready</span></div>
     <div><span class="prompt">$ </span><span class="cmd">curl -H "Authorization: Bearer $KEY" \</span></div>
-    <div><span class="cmd">    https://proxy.herald.tools/queue/github</span></div>
-    <div><span class="out">{"messages":[{"message_id":"422609...","body":"..."}]}</span></div>
+    <div><span class="cmd">    https://proxy.herald.tools/endpoints/github/messages</span></div>
+    <div><span class="out">{"object":"list","data":[{"object":"message","message_id":"msg_422609...","body":"..."}],"has_more":false,"queue_depth":0}</span></div>
     <div>&nbsp;</div>
     <div><span class="comment"># ACK and move on</span></div>
     <div><span class="prompt">$ </span><span class="cmd">curl -X POST -H "Authorization: Bearer $KEY" \</span></div>
-    <div><span class="cmd">    https://proxy.herald.tools/ack/github/422609...</span></div>
-    <div><span class="out">{"acknowledged":true}</span></div>
+    <div><span class="cmd">    https://proxy.herald.tools/endpoints/github/messages/msg_422609.../ack</span></div>
+    <div><span class="out">{"object":"ack_result","message_id":"msg_422609...","acknowledged":true}</span></div>
   </div>
 </section>
 
@@ -313,8 +313,8 @@ footer .bottom span{font-family:var(--font-mono);font-size:.6875rem;color:var(--
       <ul>
         <li><a href="https://proxy.herald.tools/health">Health check</a></li>
         <li><span style="font-size:.8125rem;color:var(--muted)">POST /:id/:endpoint</span></li>
-        <li><span style="font-size:.8125rem;color:var(--muted)">GET /queue/:endpoint</span></li>
-        <li><span style="font-size:.8125rem;color:var(--muted)">WS /stream/:endpoint</span></li>
+        <li><span style="font-size:.8125rem;color:var(--muted)">GET /endpoints/:endpoint/messages</span></li>
+        <li><span style="font-size:.8125rem;color:var(--muted)">WS /endpoints/:endpoint/stream</span></li>
       </ul>
     </div>
     <div>
@@ -418,12 +418,16 @@ th{color:var(--muted);font-weight:500;font-size:0.8rem;text-transform:uppercase;
   }
 }</pre>
 
-<h3>Response <code>201 Created</code></h3>
+<h3>Response <code>201 Created</code> (new) / <code>200 OK</code> (existing)</h3>
 <pre>{
+  "object": "account",
   "customer_id": "my-agent",
   "api_key": "hrl_sk_...",
-  "created": true
+  "created": 1775183297
 }</pre>
+<p>HTTP status discriminates new (<code>201</code>) from existing (<code>200</code>); <code>created</code> is the Unix-second timestamp of the original registration.</p>
+<p><strong><code>customer_id</code> constraints:</strong> 3–32 chars, <code>[a-z0-9-]</code> only, must start with a letter or digit, must not collide with reserved top-level routes (<code>account</code>, <code>ack</code>, <code>admin</code>, <code>api</code>, <code>billing</code>, <code>dlq</code>, <code>docs</code>, <code>endpoints</code>, <code>health</code>, <code>heartbeat</code>, <code>messages</code>, <code>nack</code>, <code>queue</code>, <code>register</code>, <code>stream</code>, <code>stripe</code>, ...).</p>
+<p><strong>Rate limit:</strong> per-IP 5/minute and 50/day. Source IP read from <code>X-Forwarded-For</code> or <code>X-Real-IP</code>.</p>
 
 <h3>Ingest Auth Options</h3>
 <table>
@@ -460,15 +464,19 @@ th{color:var(--muted);font-weight:500;font-size:0.8rem;text-transform:uppercase;
 
 <h3>Response <code>200 OK</code></h3>
 <pre>{
-  "message_id": "a1b2c3...",
-  "fingerprint": "d4e5f6...",
-  "received_at": "1775183297820527578"
+  "object": "ingest_result",
+  "message_id": "msg_a1b2c3...",
+  "fingerprint": "fp_d4e5f6...",
+  "received_at": 1775183297,
+  "received_at_ns": "1775183297820527578"
 }</pre>
+<p><code>received_at</code> is Unix integer seconds. <code>received_at_ns</code> is a decimal string of nanoseconds (does not fit in 32-bit; many JSON libs cannot decode 64-bit integers natively).</p>
 
 <h3>Deduplication</h3>
 <p>If the same body was already received for this endpoint:</p>
 <pre>{
-  "fingerprint": "d4e5f6...",
+  "object": "ingest_result",
+  "fingerprint": "fp_d4e5f6...",
   "deduplicated": true
 }</pre>
 </div>
@@ -479,7 +487,7 @@ th{color:var(--muted);font-weight:500;font-size:0.8rem;text-transform:uppercase;
 <div class="endpoint">
 <div class="endpoint-header">
 <span class="method method-get">GET</span>
-<span>/queue/{endpoint_name}</span>
+<span>/endpoints/{endpoint_name}/messages</span>
 <span class="tag tag-auth">Auth required</span>
 </div>
 <p>Fetch queued messages. Messages become invisible for <code>visibility_timeout</code> seconds.</p>
@@ -493,19 +501,23 @@ th{color:var(--muted);font-weight:500;font-size:0.8rem;text-transform:uppercase;
 
 <h3>Response <code>200 OK</code></h3>
 <pre>{
-  "messages": [
+  "object": "list",
+  "data": [
     {
-      "message_id": "a1b2c3...",
-      "fingerprint": "d4e5f6...",
+      "object": "message",
+      "message_id": "msg_a1b2c3...",
+      "fingerprint": "fp_d4e5f6...",
       "body": "base64-encoded-payload",
       "headers": {"Content-Type": "application/json"},
-      "received_at": "1775183297820527578",
+      "received_at": 1775183297,
       "deliver_count": 1,
       "encryption": "service"
     }
-  ]
+  ],
+  "has_more": false,
+  "queue_depth": 0
 }</pre>
-<p>Returns <code>204 No Content</code> if queue is empty.</p>
+<p>Empty queue returns the same envelope with <code>data: []</code> and <code>has_more: false</code>. There is no <code>204</code> branch.</p>
 </div>
 
 <!-- Acknowledge -->
@@ -514,41 +526,46 @@ th{color:var(--muted);font-weight:500;font-size:0.8rem;text-transform:uppercase;
 <div class="endpoint">
 <div class="endpoint-header">
 <span class="method method-post">POST</span>
-<span>/ack/{endpoint_name}/{message_id}</span>
+<span>/endpoints/{endpoint_name}/messages/{message_id}/ack</span>
 <span class="tag tag-auth">Auth required</span>
 </div>
 <p>Mark a message as processed. Removes it from the queue.</p>
-<pre>{"acknowledged": true}</pre>
+<pre>{"object": "ack_result", "message_id": "msg_a1b2c3...", "acknowledged": true}</pre>
 </div>
 
 <div class="endpoint">
 <div class="endpoint-header">
 <span class="method method-post">POST</span>
-<span>/ack/{endpoint_name}</span>
+<span>/endpoints/{endpoint_name}/messages/ack</span>
 <span class="tag tag-auth">Auth required</span>
 </div>
-<p>Batch acknowledge. Body: <code>{"message_ids": ["id1", "id2"]}</code></p>
-<pre>{"acknowledged": ["id1", "id2"], "failed": []}</pre>
+<p>Batch acknowledge. Body: <code>{"message_ids": ["msg_...", "msg_..."]}</code></p>
+<pre>{"object": "batch_ack_result", "acknowledged": ["msg_..."], "failed": []}</pre>
 </div>
 
 <div class="endpoint">
 <div class="endpoint-header">
 <span class="method method-post">POST</span>
-<span>/nack/{endpoint_name}/{message_id}</span>
+<span>/endpoints/{endpoint_name}/messages/{message_id}/nack</span>
 <span class="tag tag-auth">Auth required</span>
 </div>
-<p>Reject a message. <code>?permanent=true</code> sends to DLQ. Default: requeue for retry.</p>
-<pre>{"requeued": true}  // or {"dlq": true}</pre>
+<p>Reject a message. Body selects the disposition (defaults to <code>requeue</code> if body omitted).</p>
+<pre>// Body
+{"disposition": "requeue"}   // or "dlq"
+
+// Response
+{"object": "nack_result", "message_id": "msg_...", "disposition": "requeue"}</pre>
+<p><code>disposition</code> is an open enum — future values may include <code>delay_requeue</code> or <code>discard</code>. Unknown values are rejected with <code>400</code>.</p>
 </div>
 
 <div class="endpoint">
 <div class="endpoint-header">
 <span class="method method-post">POST</span>
-<span>/heartbeat/{endpoint_name}/{message_id}</span>
+<span>/endpoints/{endpoint_name}/messages/{message_id}/heartbeat</span>
 <span class="tag tag-auth">Auth required</span>
 </div>
 <p>Extend visibility timeout. <code>?extend=600</code> (seconds, 30–43200).</p>
-<pre>{"visibility_timeout_extended": true}</pre>
+<pre>{"object": "heartbeat_result", "message_id": "msg_...", "visibility_timeout_extended": true, "extended_by": 300}</pre>
 </div>
 
 <!-- WebSocket -->
@@ -557,23 +574,32 @@ th{color:var(--muted);font-weight:500;font-size:0.8rem;text-transform:uppercase;
 <div class="endpoint">
 <div class="endpoint-header">
 <span class="method method-get">GET</span>
-<span>/stream/{endpoint_name}</span>
+<span>/endpoints/{endpoint_name}/stream</span>
 </div>
 <p>Upgrade to WebSocket. First message must be auth: <code>{"type": "auth", "api_key": "hrl_sk_..."}</code></p>
-<p>Server sends <code>{"type": "message", ...}</code> as messages arrive. Client sends <code>{"type": "ack", "message_id": "..."}</code>.</p>
+<p>Server sends <code>{"type": "message", "message_id": "msg_...", ...}</code> as messages arrive. Client sends <code>{"type": "ack", "message_id": "msg_..."}</code> or <code>{"type": "nack", "message_id": "msg_...", "disposition": "requeue"}</code>.</p>
 </div>
 
 <!-- Errors -->
 <h2 id="errors">Error Responses</h2>
+<p>All errors share the shape:</p>
+<pre>{
+  "error": {
+    "type": "rate_limit_exceeded",
+    "code": "queue_depth_exceeded",
+    "message": "queue depth limit reached; ACK existing messages to make room"
+  }
+}</pre>
 <table>
-<tr><th>Code</th><th>Meaning</th></tr>
-<tr><td>400</td><td>Bad request (invalid customer_id, malformed body)</td></tr>
-<tr><td>401</td><td>Unauthorized (missing/invalid API key or ingest auth)</td></tr>
-<tr><td>413</td><td>Payload too large (Free: 64KB, Standard: 1MB, Pro: 10MB)</td></tr>
-<tr><td>429</td><td>Rate limited (daily message quota exceeded)</td></tr>
-<tr><td>507</td><td>Queue full (max depth exceeded)</td></tr>
+<tr><th>Status</th><th><code>type</code> / <code>code</code></th><th>Meaning</th></tr>
+<tr><td>400</td><td>invalid_request / bad_request</td><td>Invalid <code>customer_id</code>, malformed body, unknown enum value.</td></tr>
+<tr><td>401</td><td>authentication_error / unauthorized</td><td>Missing or invalid API key, or invalid ingest auth.</td></tr>
+<tr><td>404</td><td>invalid_request / not_found</td><td>Message not in flight (already acked, expired, or never existed).</td></tr>
+<tr><td>413</td><td>invalid_request / payload_too_large</td><td>Body exceeds tier limit (Free: 64KB, Standard: 1MB, Pro: 10MB).</td></tr>
+<tr><td>429</td><td>rate_limit_exceeded / rate_limit_exceeded</td><td>Daily/burst quota exceeded. <code>Retry-After</code> header included.</td></tr>
+<tr><td>429</td><td>resource_exhausted / queue_depth_exceeded</td><td>Endpoint queue is full; ACK existing messages to make room. <code>Retry-After</code> header included.</td></tr>
+<tr><td>500</td><td>internal_error / internal_error</td><td>Unexpected server failure.</td></tr>
 </table>
-<p>All errors return <code>{"error": "description"}</code>.</p>
 
 <!-- Auth -->
 <h2 id="auth">Authentication</h2>

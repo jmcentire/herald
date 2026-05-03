@@ -164,11 +164,15 @@ Herald receives an HTTP POST at `/<customer>/<endpoint>`.
 3. Check `fingerprint` against the deduplication index for this endpoint. If it exists, return early (see collision handling below).
 4. Separate HTTP headers from body. Store as distinct fields.
 5. Encrypt the body (see [Encryption Model](#encryption-model)).
-6. Assign `received_at` timestamp (UTC, nanosecond precision).
+6. Assign `received_at` timestamp internally (UTC, nanosecond precision).
 7. Enqueue the message to the endpoint's FIFO queue.
-8. Return `HTTP 200` with `{ "message_id": "<hash>", "fingerprint": "<hash>", "received_at": "<timestamp>" }`.
+8. Return `HTTP 200` with `{ "object": "ingest_result", "message_id": "msg_<hex>", "fingerprint": "fp_<hex>", "received_at": <unix_seconds>, "received_at_ns": "<unix_nanos>" }`.
 
-**Collision handling:** If `fingerprint` already exists in the active queue for this endpoint, this is a duplicate delivery from the provider. Return `HTTP 200` with `{ "fingerprint": "<hash>", "deduplicated": true }`. Do not enqueue again. Deduplication window = retention period. The `message_id` is always unique (includes timestamp), so it serves as a safe primary key even if two different endpoints receive identical payloads.
+**ID format:** `message_id` and `fingerprint` are surfaced on the wire with stable prefixes (`msg_`, `fp_`) followed by the 64-character lowercase-hex SHA-256. Treat them as opaque strings — the prefix lets logs, support tickets, and secret scanners identify the type of value at a glance. Internally Herald keys storage by the raw hex (the prefix is purely a wire convention).
+
+**Timestamp format:** `received_at` is a Unix integer (seconds since epoch). The hashed-internal nanosecond value is exposed only on the ingest acknowledgment as `received_at_ns`, a decimal string (the value does not fit in a 32-bit integer and many JSON libraries cannot natively decode 64-bit integers).
+
+**Collision handling:** If `fingerprint` already exists in the active queue for this endpoint, this is a duplicate delivery from the provider. Return `HTTP 200` with `{ "object": "ingest_result", "fingerprint": "fp_<hex>", "deduplicated": true }`. Do not enqueue again. Deduplication window = retention period. The `message_id` is always unique (includes timestamp), so it serves as a safe primary key even if two different endpoints receive identical payloads.
 
 ### 2. Storage
 
@@ -192,12 +196,13 @@ deliver_count: number of times fetched without ACK
 
 Agent fetches messages via HTTP polling or WebSocket stream.
 
-**Poll:** `GET /queue/<endpoint>?limit=10`
-- Returns oldest visible messages, up to `limit`.
+**Poll:** `GET /endpoints/<endpoint>/messages?limit=10`
+- Returns oldest visible messages, up to `limit`, in the standard list envelope (`{ object: "list", data: [...], has_more, queue_depth }`).
+- An empty queue still returns `HTTP 200` with `data: []` (never `204`) so clients have a single response shape to parse.
 - Marks returned messages as invisible for `visibility_timeout` seconds (default: 300, configurable).
 - If the agent does not ACK within the timeout, the message becomes visible again (redelivery).
 
-**WebSocket:** `WS /stream/<endpoint>`
+**WebSocket:** `WS /endpoints/<endpoint>/stream`
 - Persistent connection. Messages pushed as they arrive.
 - Same visibility timeout and ACK semantics.
 
@@ -205,7 +210,7 @@ Agent fetches messages via HTTP polling or WebSocket stream.
 
 Agent sends ACK for each processed message:
 ```
-POST /ack/<endpoint>/<message_id>
+POST /endpoints/<endpoint>/messages/<message_id>/ack
 ```
 
 ACK removes the message from the active queue. On tiers with retention, the message moves to a read-only archive (queryable but not re-delivered).
@@ -369,11 +374,11 @@ Every endpoint has an associated DLQ.
 
 **When messages move to DLQ:**
 - `deliver_count` exceeds `max_retries` (default: 3, configurable per endpoint).
-- A message is explicitly NACKed with `permanent: true`.
+- A message is explicitly NACKed with `disposition: "dlq"`.
 
 **DLQ behavior:**
-- DLQ messages are queryable: `GET /dlq/<endpoint>?limit=10`
-- DLQ messages can be replayed: `POST /dlq/<endpoint>/<message_id>/replay`
+- DLQ messages are queryable: `GET /endpoints/<endpoint>/dlq?limit=10` (same list envelope as `/messages`).
+- DLQ messages can be replayed: `POST /endpoints/<endpoint>/dlq/<message_id>/replay` returns `{ "object": "message", "replayed": true, "message_id": "msg_<hex>", "source_message_id": "msg_<hex>" }`.
 - DLQ messages follow the same retention policy as the active queue.
 - DLQ depth is surfaced in account metrics.
 
@@ -447,7 +452,7 @@ Maximum messages in the active queue per endpoint:
 | Pro        | 100,000        |
 | Enterprise | Custom         |
 
-If the queue is full, new messages are rejected with `HTTP 507 Insufficient Storage`.
+If the queue is full, new messages are rejected with `HTTP 429 Too Many Requests` carrying a `Retry-After` header and a body of the form `{ "error": { "type": "resource_exhausted", "code": "queue_depth_exceeded", "message": "..." } }`. The `code` field distinguishes this from rate-limit 429s (which use `code: "rate_limit_exceeded"`); the retry strategy differs — rate limits recover by waiting, queue-full recovers when the agent drains messages.
 
 ### Self-Hosted
 
@@ -573,7 +578,7 @@ handlers:
     timeout: 60s
     env:
       HERALD_MESSAGE_ID: "{{.message_id}}"
-      HERALD_ENDPOINT: "{{.endpoint}}"
+      HERALD_FINGERPRINT: "{{.fingerprint}}"
 
     hooks:
       pre:
@@ -592,9 +597,9 @@ handlers:
 |----------------|-------|
 | `{{.body}}`    | Decrypted message body |
 | `{{.headers}}` | JSON object of HTTP headers (Standard+ only) |
-| `{{.message_id}}` | Content-addressable hash |
-| `{{.endpoint}}` | Endpoint name |
-| `{{.received_at}}` | Herald receipt timestamp |
+| `{{.message_id}}` | Unique delivery identifier (`msg_<hex>`, scoped to endpoint + time + body) |
+| `{{.fingerprint}}` | Content-addressable body hash (`fp_<hex>`) — use for cross-delivery idempotency checks |
+| `{{.received_at}}` | Herald receipt timestamp (Unix integer seconds) |
 
 ### Execution Flow
 
@@ -712,55 +717,85 @@ Available on Pro and Enterprise tiers. Records:
 
 ## API Surface
 
+### Conventions
+
+- **Identifiers** are prefixed strings: `msg_<hex>` for messages, `fp_<hex>` for body fingerprints, `hrl_sk_<hex>` for API keys. Hex is lowercase, 64 chars for SHA-256-derived ids. Treat the whole string as opaque.
+- **Resource discriminator:** every JSON response carries an `object` field (e.g. `"object": "message"`, `"object": "list"`, `"object": "account"`).
+- **List envelope:** all list responses return `{ "object": "list", "data": [...], "has_more": bool, "queue_depth": int }`. Empty lists are `200` with `data: []`, never `204`.
+- **Timestamps** are Unix integer seconds. Where sub-second precision is exposed, it is a separate decimal-string field with the suffix `_ns`.
+- **Errors** all share the shape `{ "error": { "type": "...", "code": "...", "message": "..." } }`. `type` groups errors broadly (e.g. `rate_limit_exceeded`, `resource_exhausted`, `invalid_request`, `authentication_error`, `internal_error`); `code` discriminates within a class (e.g. `queue_depth_exceeded` vs `rate_limit_exceeded`, both 429s). 429s carry `Retry-After`.
+
 ### Inbound (Webhook Providers)
 
 ```
 POST /<customer_id>/<endpoint_name>
   Body: raw webhook payload
   Headers: provider headers (forwarded and stored)
-  → 200 { message_id, received_at }
-  → 429 Too Many Requests
-  → 507 Queue Full
+  → 200 { object: "ingest_result", message_id: "msg_<hex>", fingerprint: "fp_<hex>",
+          received_at: <unix_seconds>, received_at_ns: "<unix_nanos>" }
+  → 200 { object: "ingest_result", fingerprint: "fp_<hex>", deduplicated: true }
   → 413 Payload Too Large
+  → 429 Too Many Requests   # rate_limit_exceeded OR queue_depth_exceeded (see code)
 ```
 
 ### Agent (Polling)
 
 ```
-GET /queue/<endpoint_name>?limit=10&visibility_timeout=300
+GET /endpoints/<endpoint_name>/messages?limit=10&visibility_timeout=300
   Auth: Bearer <api_key>
-  → 200 { messages: [{ message_id, body, headers?, received_at, deliver_count }] }
-  → 204 No Content (queue empty)
+  → 200 {
+      object: "list",
+      data: [{
+        object: "message",
+        message_id: "msg_<hex>",
+        fingerprint: "fp_<hex>",
+        body: "<base64>",
+        headers?: { ... },
+        received_at: <unix_seconds>,
+        deliver_count: <int>,
+        encryption: "service" | "byok" | "none",
+        key_version?: "<string>"
+      }],
+      has_more: bool,
+      queue_depth: <int>
+    }
 
-POST /ack/<endpoint_name>/<message_id>
+POST /endpoints/<endpoint_name>/messages/<message_id>/ack
   Auth: Bearer <api_key>
-  → 200 { acknowledged: true }
+  → 200 { object: "ack_result", message_id: "msg_<hex>", acknowledged: true }
 
-POST /ack/<endpoint_name>
+POST /endpoints/<endpoint_name>/messages/ack
   Auth: Bearer <api_key>
-  Body: { "message_ids": ["<id1>", "<id2>", ...] }
-  → 200 { acknowledged: ["<id1>", "<id2>"], failed: [] }
+  Body: { "message_ids": ["msg_<hex>", "msg_<hex>", ...] }
+  → 200 { object: "batch_ack_result",
+          acknowledged: ["msg_<hex>", ...],
+          failed:       ["msg_<hex>", ...] }
 
-POST /nack/<endpoint_name>/<message_id>?permanent=false
+POST /endpoints/<endpoint_name>/messages/<message_id>/nack
   Auth: Bearer <api_key>
-  → 200 { requeued: true } or { dlq: true }
+  Body: { "disposition": "requeue" | "dlq" }   # default "requeue" if body omitted
+  → 200 { object: "nack_result", message_id: "msg_<hex>", disposition: "requeue" | "dlq" }
 
-POST /heartbeat/<endpoint_name>/<message_id>?extend=300
+POST /endpoints/<endpoint_name>/messages/<message_id>/heartbeat?extend=300
   Auth: Bearer <api_key>
-  → 200 { visibility_timeout_extended: true }
+  → 200 { object: "heartbeat_result", message_id: "msg_<hex>",
+          visibility_timeout_extended: true, extended_by: <seconds> }
 ```
+
+`disposition` is an open enum: future values may include `delay_requeue` or `discard` for richer retry semantics. Unknown values are rejected with `400`.
 
 ### Agent (WebSocket)
 
 ```
-WS /stream/<endpoint_name>
+WS /endpoints/<endpoint_name>/stream
   Auth: first-message authentication (see below)
   Client → Server: { type: "auth", api_key: "hrl_sk_..." }   # MUST be first frame
   Server → Client: { type: "auth_ok" } or { type: "auth_error", reason: "..." }
-  Server → Client: { type: "message", message_id, body, headers?, received_at }
-  Client → Server: { type: "ack", message_id }
-  Client → Server: { type: "nack", message_id, permanent: false }
-  Client → Server: { type: "heartbeat", message_id }
+  Server → Client: { type: "message", message_id: "msg_<hex>", body, headers?,
+                      received_at: <unix_seconds>, deliver_count }
+  Client → Server: { type: "ack", message_id: "msg_<hex>" }
+  Client → Server: { type: "nack", message_id: "msg_<hex>", disposition: "requeue" | "dlq" }
+  Client → Server: { type: "heartbeat", message_id: "msg_<hex>" }
 ```
 
 **First-message auth:** API keys are never sent in query parameters (they leak into server logs, proxy logs, and browser history). The client opens a WebSocket connection, sends an auth frame as the first message, and receives either `auth_ok` or `auth_error`. No messages are delivered until authentication succeeds. Connections that do not authenticate within 5 seconds are closed.
@@ -768,13 +803,14 @@ WS /stream/<endpoint_name>
 ### Dead Letter Queue
 
 ```
-GET /dlq/<endpoint_name>?limit=10
+GET /endpoints/<endpoint_name>/dlq?limit=10
   Auth: Bearer <api_key>
-  → 200 { messages: [...] }
+  → 200 { object: "list", data: [{ object: "dlq_message", ... }], has_more, queue_depth }
 
-POST /dlq/<endpoint_name>/<message_id>/replay
+POST /endpoints/<endpoint_name>/dlq/<message_id>/replay
   Auth: Bearer <api_key>
-  → 200 { replayed: true, new_message_id: ... }
+  → 200 { object: "message", replayed: true,
+          message_id: "msg_<hex>", source_message_id: "msg_<hex>" }
 ```
 
 ### Registration
@@ -782,14 +818,27 @@ POST /dlq/<endpoint_name>/<message_id>/replay
 ```
 POST /register
   Body: { "customer_id": "my-agent" }
-  → 201 { customer_id, api_key: "hrl_sk_...", created: true }
-  → 200 { customer_id, api_key: "hrl_sk_...", created: false }  # idempotent
-  → 400 Bad Request (empty or invalid customer_id)
+  → 201 { object: "account", customer_id, api_key: "hrl_sk_...", created: <unix_seconds> }
+  → 200 { object: "account", customer_id, api_key: "hrl_sk_...", created: <unix_seconds> }
+       # idempotent — returns the existing key. HTTP status discriminates new (201) vs existing (200).
+  → 400 invalid_customer_id
+  → 429 rate_limit_exceeded   # per-IP register limit (see below)
 ```
 
 Programmatic account creation. Returns an API key for polling/ack operations.
 Idempotent: calling with the same `customer_id` returns the existing key.
 No authentication required — the returned API key is the credential.
+
+**`customer_id` constraints:**
+- 3–32 characters
+- `[a-z0-9-]` only, must start with a letter or digit
+- Case-sensitive (lowercase only on the wire)
+- Must not be one of the reserved names that collide with top-level routes:
+  `account`, `ack`, `admin`, `api`, `billing`, `dlq`, `docs`, `endpoints`, `health`,
+  `heartbeat`, `login`, `logout`, `messages`, `nack`, `queue`, `register`, `root`,
+  `stream`, `stripe`, `system`, `www`
+
+**Rate limit:** `/register` is per-IP capped at 5/minute and 50/day to defend against bulk credential generation. Source IP is read from `X-Forwarded-For` (first hop) or `X-Real-IP`; deployments fronted by a proxy must set one.
 
 ### Account Management (herald-tools only)
 
@@ -797,10 +846,10 @@ No authentication required — the returned API key is the credential.
 POST   /account/endpoints          — create endpoint
 GET    /account/endpoints          — list endpoints
 DELETE /account/endpoints/<name>   — delete endpoint
-PUT    /account/keys/byok         — upload BYOK public key
-POST   /account/keys/rotate       — rotate API key
-GET    /account/usage             — usage metrics
-GET    /account/audit             — audit log (Pro+)
+POST   /account/keys/byok          — upload BYOK public key
+POST   /account/keys/rotate        — rotate API key
+GET    /account/usage              — usage metrics
+GET    /account/audit              — audit log (Pro+)
 ```
 
 ### Payload Size Limits
@@ -861,11 +910,11 @@ Decisions resolved via adversarial review (Advocate, 6-persona, 22 findings):
 
 2. **Message ID vs. fingerprint:** Resolved. Two hashes per message: `fingerprint` (SHA-256 of body, for dedup) and `message_id` (SHA-256 of endpoint + timestamp + body, for unique primary key). Prevents the theoretical collision where two endpoints receiving identical payloads would share an ID.
 
-3. **Batch ACK:** Resolved. `POST /ack/<endpoint>` accepts `{ "message_ids": [...] }` for batch acknowledgment. Needed at Pro-tier volumes (500K messages/day).
+3. **Batch ACK:** Resolved. `POST /endpoints/<endpoint>/messages/ack` accepts `{ "message_ids": [...] }` for batch acknowledgment. Needed at Pro-tier volumes (500K messages/day).
 
 4. **BYOK headers transparency:** Resolved. Headers are encrypted with service key even under BYOK. This is documented explicitly in the Encryption Model section. Users expecting BYOK to cover all data should understand that headers remain Herald-readable to enable signature verification and content-type serving.
 
-5. **BYOK key rotation:** Resolved. Each encrypted message stores a `key_version` identifier (opaque string, set by Herald when the customer uploads a new public key). Customer uploads a new public key via `PUT /account/keys/byok` — Herald assigns it the next version and starts encrypting new messages with it. Existing messages retain their original `key_version`. On delivery, the `key_version` is included in the message envelope so the agent knows which private key to use for decryption. Herald only ever holds public keys. Key management (which private key corresponds to which version) is entirely the customer's responsibility.
+5. **BYOK key rotation:** Resolved. Each encrypted message stores a `key_version` identifier (opaque string, set by Herald when the customer uploads a new public key). Customer uploads a new public key via `POST /account/keys/byok` — Herald assigns it the next version and starts encrypting new messages with it. Existing messages retain their original `key_version`. On delivery, the `key_version` is included in the message envelope so the agent knows which private key to use for decryption. Herald only ever holds public keys. Key management (which private key corresponds to which version) is entirely the customer's responsibility.
 
 ---
 
