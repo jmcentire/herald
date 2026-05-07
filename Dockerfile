@@ -6,6 +6,7 @@ WORKDIR /app
 COPY Cargo.toml Cargo.lock ./
 COPY herald-server/ herald-server/
 COPY herald-cli/ herald-cli/
+COPY tests/ tests/
 
 RUN cargo build --release -p herald-server
 
