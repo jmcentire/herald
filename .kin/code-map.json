@@ -1,0 +1,1790 @@
+{
+  "version": "1.0.0",
+  "project": {
+    "name": "herald",
+    "description": "Code map exported from Kindex for herald.",
+    "languages": [
+      "Rust"
+    ],
+    "frameworks": [],
+    "analyzedAt": "2026-05-24T14:57:56",
+    "gitCommitHash": "3507bbf3774217c9be2eb01b1ed302a4ed37fa86"
+  },
+  "nodes": [
+    {
+      "id": "code-mod-herald-8a245fc967eb",
+      "type": "file",
+      "name": "herald-server/src/routes/websocket.rs",
+      "filePath": "herald-server/src/routes/websocket.rs",
+      "summary": "Language: Rust | Path: herald-server/src/routes/websocket.rs | ~351 lines ## Classes - ClientMessage",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 8,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "artifact",
+        "toolTier": "C"
+      }
+    },
+    {
+      "id": "code-mod-herald-cff36a9fa57b",
+      "type": "file",
+      "name": "herald-server/src/auth.rs",
+      "filePath": "herald-server/src/auth.rs",
+      "summary": "Language: Rust | Path: herald-server/src/auth.rs | ~532 lines ## Classes - Account",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 15,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "artifact",
+        "toolTier": "C"
+      }
+    },
+    {
+      "id": "code-mod-herald-d720fae0d812",
+      "type": "file",
+      "name": "herald-cli/src/streamer.rs",
+      "filePath": "herald-cli/src/streamer.rs",
+      "summary": "Language: Rust | Path: herald-cli/src/streamer.rs | ~235 lines ## Classes - ClientMsg",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 5,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "artifact",
+        "toolTier": "C"
+      }
+    },
+    {
+      "id": "code-mod-herald-681a3161ed45",
+      "type": "file",
+      "name": "herald-server/src/state.rs",
+      "filePath": "herald-server/src/state.rs",
+      "summary": "Language: Rust | Path: herald-server/src/state.rs | ~7 lines ## Classes - AppState",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "artifact",
+        "toolTier": "C"
+      }
+    },
+    {
+      "id": "code-mod-herald-f2013e79e6a0",
+      "type": "file",
+      "name": "herald-server/src/error.rs",
+      "filePath": "herald-server/src/error.rs",
+      "summary": "Language: Rust | Path: herald-server/src/error.rs | ~39 lines ## Classes - HeraldError",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "artifact",
+        "toolTier": "C"
+      }
+    },
+    {
+      "id": "code-mod-herald-b7faf8293a82",
+      "type": "file",
+      "name": "herald-cli/src/client.rs",
+      "filePath": "herald-cli/src/client.rs",
+      "summary": "Language: Rust | Path: herald-cli/src/client.rs | ~157 lines ## Classes - BatchAckRequest",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 5,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "artifact",
+        "toolTier": "C"
+      }
+    },
+    {
+      "id": "code-mod-herald-a3d167bdb3d6",
+      "type": "file",
+      "name": "herald-server/src/routes/agent.rs",
+      "filePath": "herald-server/src/routes/agent.rs",
+      "summary": "Language: Rust | Path: herald-server/src/routes/agent.rs | ~321 lines ## Classes - BatchAckRequest",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 13,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "artifact",
+        "toolTier": "C"
+      }
+    },
+    {
+      "id": "code-mod-herald-f27185e19e45",
+      "type": "file",
+      "name": "herald-cli/src/config.rs",
+      "filePath": "herald-cli/src/config.rs",
+      "summary": "Language: Rust | Path: herald-cli/src/config.rs | ~183 lines ## Classes - Config",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 16,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "artifact",
+        "toolTier": "C"
+      }
+    },
+    {
+      "id": "code-mod-herald-467c4e609449",
+      "type": "file",
+      "name": "herald-cli/src/main.rs",
+      "filePath": "herald-cli/src/main.rs",
+      "summary": "Language: Rust | Path: herald-cli/src/main.rs | ~40 lines ## Classes - Cli",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 3,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "artifact",
+        "toolTier": "C"
+      }
+    },
+    {
+      "id": "code-mod-herald-4e2c3a83dac7",
+      "type": "file",
+      "name": "herald-cli/src/error.rs",
+      "filePath": "herald-cli/src/error.rs",
+      "summary": "Language: Rust | Path: herald-cli/src/error.rs | ~19 lines ## Classes - CliError",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "artifact",
+        "toolTier": "C"
+      }
+    },
+    {
+      "id": "code-mod-herald-c58a1cb09a75",
+      "type": "file",
+      "name": "herald-server/src/config.rs",
+      "filePath": "herald-server/src/config.rs",
+      "summary": "Language: Rust | Path: herald-server/src/config.rs | ~88 lines ## Classes - Config",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 3,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "artifact",
+        "toolTier": "C"
+      }
+    },
+    {
+      "id": "code-mod-herald-64ef24ed1e56",
+      "type": "file",
+      "name": "herald-server/src/crypto.rs",
+      "filePath": "herald-server/src/crypto.rs",
+      "summary": "Language: Rust | Path: herald-server/src/crypto.rs | ~203 lines ## Functions - decrypt(key: &[u8; 32], data: &[u8]) -> Result<Vec<u8>, HeraldError>",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 9,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "artifact",
+        "toolTier": "C"
+      }
+    },
+    {
+      "id": "code-mod-herald-c324ac487c0d",
+      "type": "file",
+      "name": "herald-cli/src/handler.rs",
+      "filePath": "herald-cli/src/handler.rs",
+      "summary": "Language: Rust | Path: herald-cli/src/handler.rs | ~284 lines ## Classes - HandlerResult",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 4,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "artifact",
+        "toolTier": "C"
+      }
+    },
+    {
+      "id": "code-mod-herald-e358a9c04fee",
+      "type": "file",
+      "name": "herald-server/src/queue.rs",
+      "filePath": "herald-server/src/queue.rs",
+      "summary": "Language: Rust | Path: herald-server/src/queue.rs | ~432 lines ## Classes - Message",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 23,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "artifact",
+        "toolTier": "C"
+      }
+    },
+    {
+      "id": "code-mod-herald-2a77294eadd7",
+      "type": "file",
+      "name": "herald-server/src/billing.rs",
+      "filePath": "herald-server/src/billing.rs",
+      "summary": "Language: Rust | Path: herald-server/src/billing.rs | ~317 lines ## Classes - TierChangeRequest",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 10,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "artifact",
+        "toolTier": "C"
+      }
+    },
+    {
+      "id": "code-mod-herald-27d6f17cd15b",
+      "type": "file",
+      "name": "herald-server/src/routes/register.rs",
+      "filePath": "herald-server/src/routes/register.rs",
+      "summary": "Language: Rust | Path: herald-server/src/routes/register.rs | ~292 lines ## Classes - RegisterRequest",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 5,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "artifact",
+        "toolTier": "C"
+      }
+    },
+    {
+      "id": "code-mod-herald-52da92dcf97d",
+      "type": "file",
+      "name": "herald-server/src/routes/mod.rs",
+      "filePath": "herald-server/src/routes/mod.rs",
+      "summary": "Language: Rust | Path: herald-server/src/routes/mod.rs | ~4 lines",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "artifact",
+        "toolTier": "C"
+      }
+    },
+    {
+      "id": "code-mod-herald-ca659b8c90cf",
+      "type": "file",
+      "name": "herald-server/src/main.rs",
+      "filePath": "herald-server/src/main.rs",
+      "summary": "Language: Rust | Path: herald-server/src/main.rs | ~119 lines ## Functions - health_check() -> &'static str",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 2,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "artifact",
+        "toolTier": "C"
+      }
+    },
+    {
+      "id": "code-mod-herald-7d7145535726",
+      "type": "file",
+      "name": "herald-server/src/routes/ingest.rs",
+      "filePath": "herald-server/src/routes/ingest.rs",
+      "summary": "Language: Rust | Path: herald-server/src/routes/ingest.rs | ~153 lines ## Functions - ingest_webhook( State(state): State<AppState>, Path((customer_id, endpoint_name)): Path<(String, String)>, headers: HeaderMap, body: Bytes, ) -> Result<impl IntoResponse, HeraldError>",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 3,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "artifact",
+        "toolTier": "C"
+      }
+    },
+    {
+      "id": "code-mod-herald-1b2a3bb402c7",
+      "type": "file",
+      "name": "herald-cli/src/poller.rs",
+      "filePath": "herald-cli/src/poller.rs",
+      "summary": "Language: Rust | Path: herald-cli/src/poller.rs | ~11 lines ## Functions - run(config: &Config, client: &HeraldClient) -> Result<(), CliError>",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "artifact",
+        "toolTier": "C"
+      }
+    },
+    {
+      "id": "code-sym-herald-bb53053b89a1",
+      "type": "class",
+      "name": "RegisterRequest",
+      "filePath": "herald-server/src/routes/register.rs",
+      "summary": "class RegisterRequest (herald-server/src/routes/register.rs:19)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-aa6eda0f8c2c",
+      "type": "class",
+      "name": "Message",
+      "filePath": "herald-server/src/queue.rs",
+      "summary": "class Message (herald-server/src/queue.rs:12)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-6d54d48a8ace",
+      "type": "class",
+      "name": "TierChangeRequest",
+      "filePath": "herald-server/src/billing.rs",
+      "summary": "class TierChangeRequest (herald-server/src/billing.rs:184)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-fb52d1f60460",
+      "type": "class",
+      "name": "HandlerResult",
+      "filePath": "herald-cli/src/handler.rs",
+      "summary": "class HandlerResult (herald-cli/src/handler.rs:16)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-2f40ecde1b62",
+      "type": "class",
+      "name": "Config",
+      "filePath": "herald-server/src/config.rs",
+      "summary": "class Config (herald-server/src/config.rs:4)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-4c9b30c3deb0",
+      "type": "class",
+      "name": "Tier",
+      "filePath": "herald-server/src/config.rs",
+      "summary": "class Tier (herald-server/src/config.rs:21)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-13ef3e73b28b",
+      "type": "class",
+      "name": "TierLimits",
+      "filePath": "herald-server/src/config.rs",
+      "summary": "class TierLimits (herald-server/src/config.rs:29)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-ce834e90c1bd",
+      "type": "class",
+      "name": "Cli",
+      "filePath": "herald-cli/src/main.rs",
+      "summary": "class Cli (herald-cli/src/main.rs:18)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-5c59a69e1512",
+      "type": "class",
+      "name": "Commands",
+      "filePath": "herald-cli/src/main.rs",
+      "summary": "class Commands (herald-cli/src/main.rs:28)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-05116a24e374",
+      "type": "class",
+      "name": "CliError",
+      "filePath": "herald-cli/src/error.rs",
+      "summary": "class CliError (herald-cli/src/error.rs:2)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-47c95e14d342",
+      "type": "class",
+      "name": "HookConfig",
+      "filePath": "herald-cli/src/config.rs",
+      "summary": "class HookConfig (herald-cli/src/config.rs:105)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-b71b67b8206e",
+      "type": "class",
+      "name": "HookStdinMode",
+      "filePath": "herald-cli/src/config.rs",
+      "summary": "class HookStdinMode (herald-cli/src/config.rs:118)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-a301e313ed03",
+      "type": "class",
+      "name": "Hooks",
+      "filePath": "herald-cli/src/config.rs",
+      "summary": "class Hooks (herald-cli/src/config.rs:99)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-589d34338f26",
+      "type": "class",
+      "name": "StdinMode",
+      "filePath": "herald-cli/src/config.rs",
+      "summary": "class StdinMode (herald-cli/src/config.rs:73)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-32c785bffdd1",
+      "type": "class",
+      "name": "Config",
+      "filePath": "herald-cli/src/config.rs",
+      "summary": "class Config (herald-cli/src/config.rs:7)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-527c31381ac2",
+      "type": "class",
+      "name": "ConnectionMode",
+      "filePath": "herald-cli/src/config.rs",
+      "summary": "class ConnectionMode (herald-cli/src/config.rs:26)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-0bae3c22983b",
+      "type": "class",
+      "name": "FailureAction",
+      "filePath": "herald-cli/src/config.rs",
+      "summary": "class FailureAction (herald-cli/src/config.rs:85)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-6784c029c7d0",
+      "type": "class",
+      "name": "Handler",
+      "filePath": "herald-cli/src/config.rs",
+      "summary": "class Handler (herald-cli/src/config.rs:44)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-058eb15730a4",
+      "type": "class",
+      "name": "NackBody",
+      "filePath": "herald-server/src/routes/agent.rs",
+      "summary": "class NackBody (herald-server/src/routes/agent.rs:207)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-a7dc799f5e69",
+      "type": "class",
+      "name": "NackDisposition",
+      "filePath": "herald-server/src/routes/agent.rs",
+      "summary": "class NackDisposition (herald-server/src/routes/agent.rs:200)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-c78f48baed53",
+      "type": "class",
+      "name": "PollParams",
+      "filePath": "herald-server/src/routes/agent.rs",
+      "summary": "class PollParams (herald-server/src/routes/agent.rs:15)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-501cae7a44a5",
+      "type": "class",
+      "name": "QueueMessage",
+      "filePath": "herald-cli/src/client.rs",
+      "summary": "class QueueMessage (herald-cli/src/client.rs:23)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-f9229edcc902",
+      "type": "class",
+      "name": "BatchAckRequest",
+      "filePath": "herald-server/src/routes/agent.rs",
+      "summary": "class BatchAckRequest (herald-server/src/routes/agent.rs:151)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-62b1973c1ff5",
+      "type": "class",
+      "name": "HeartbeatParams",
+      "filePath": "herald-server/src/routes/agent.rs",
+      "summary": "class HeartbeatParams (herald-server/src/routes/agent.rs:292)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-b074c656a21a",
+      "type": "class",
+      "name": "MessageResponse",
+      "filePath": "herald-server/src/routes/agent.rs",
+      "summary": "class MessageResponse (herald-server/src/routes/agent.rs:31)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-1768fe6c1197",
+      "type": "class",
+      "name": "BatchAckRequest",
+      "filePath": "herald-cli/src/client.rs",
+      "summary": "class BatchAckRequest (herald-cli/src/client.rs:38)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-1d65ef25ca9e",
+      "type": "class",
+      "name": "HeraldClient",
+      "filePath": "herald-cli/src/client.rs",
+      "summary": "class HeraldClient (herald-cli/src/client.rs:6)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-3d01679f9679",
+      "type": "class",
+      "name": "NackBody",
+      "filePath": "herald-cli/src/client.rs",
+      "summary": "class NackBody (herald-cli/src/client.rs:43)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-be300cc7bbf5",
+      "type": "class",
+      "name": "PollResponse",
+      "filePath": "herald-cli/src/client.rs",
+      "summary": "class PollResponse (herald-cli/src/client.rs:13)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-f3084b9fc72a",
+      "type": "class",
+      "name": "AppState",
+      "filePath": "herald-server/src/state.rs",
+      "summary": "class AppState (herald-server/src/state.rs:5)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-21e8bc9e1d10",
+      "type": "class",
+      "name": "HeraldError",
+      "filePath": "herald-server/src/error.rs",
+      "summary": "class HeraldError (herald-server/src/error.rs:6)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-5664c58cfa6d",
+      "type": "class",
+      "name": "IngestAuth",
+      "filePath": "herald-server/src/auth.rs",
+      "summary": "class IngestAuth (herald-server/src/auth.rs:132)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-8c8f1271b4ff",
+      "type": "class",
+      "name": "ClientMsg",
+      "filePath": "herald-cli/src/streamer.rs",
+      "summary": "class ClientMsg (herald-cli/src/streamer.rs:13)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-ecaead06c69c",
+      "type": "class",
+      "name": "ServerMsg",
+      "filePath": "herald-cli/src/streamer.rs",
+      "summary": "class ServerMsg (herald-cli/src/streamer.rs:29)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-a536419de59c",
+      "type": "class",
+      "name": "ServerMessage",
+      "filePath": "herald-server/src/routes/websocket.rs",
+      "summary": "class ServerMessage (herald-server/src/routes/websocket.rs:49)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-0465c966db3e",
+      "type": "class",
+      "name": "Account",
+      "filePath": "herald-server/src/auth.rs",
+      "summary": "class Account (herald-server/src/auth.rs:20)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-b3d8fa7c8c72",
+      "type": "class",
+      "name": "CustomerConfig",
+      "filePath": "herald-server/src/auth.rs",
+      "summary": "class CustomerConfig (herald-server/src/auth.rs:269)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-d686ccb844ba",
+      "type": "class",
+      "name": "EncryptionMode",
+      "filePath": "herald-server/src/auth.rs",
+      "summary": "class EncryptionMode (herald-server/src/auth.rs:254)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-ca255a220d51",
+      "type": "class",
+      "name": "ClientMessage",
+      "filePath": "herald-server/src/routes/websocket.rs",
+      "summary": "class ClientMessage (herald-server/src/routes/websocket.rs:29)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    },
+    {
+      "id": "code-sym-herald-f5cecf15d748",
+      "type": "class",
+      "name": "NackDisposition",
+      "filePath": "herald-server/src/routes/websocket.rs",
+      "summary": "class NackDisposition (herald-server/src/routes/websocket.rs:20)",
+      "tags": [
+        "code",
+        "rust"
+      ],
+      "complexity": 1,
+      "languageNotes": {
+        "language": "Rust",
+        "kindexType": "concept",
+        "toolTier": ""
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "code-mod-herald-8a245fc967eb",
+      "target": "code-mod-herald-cff36a9fa57b",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-8a245fc967eb",
+      "target": "code-mod-herald-64ef24ed1e56",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-8a245fc967eb",
+      "target": "code-mod-herald-e358a9c04fee",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-8a245fc967eb",
+      "target": "code-mod-herald-681a3161ed45",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-cff36a9fa57b",
+      "target": "code-mod-herald-f27185e19e45",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-cff36a9fa57b",
+      "target": "code-mod-herald-64ef24ed1e56",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-cff36a9fa57b",
+      "target": "code-mod-herald-f2013e79e6a0",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-d720fae0d812",
+      "target": "code-mod-herald-b7faf8293a82",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-d720fae0d812",
+      "target": "code-mod-herald-f27185e19e45",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-d720fae0d812",
+      "target": "code-mod-herald-f2013e79e6a0",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-d720fae0d812",
+      "target": "code-mod-herald-c324ac487c0d",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-681a3161ed45",
+      "target": "code-mod-herald-f27185e19e45",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-b7faf8293a82",
+      "target": "code-mod-herald-f2013e79e6a0",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-a3d167bdb3d6",
+      "target": "code-mod-herald-cff36a9fa57b",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-a3d167bdb3d6",
+      "target": "code-mod-herald-64ef24ed1e56",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-a3d167bdb3d6",
+      "target": "code-mod-herald-f2013e79e6a0",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-a3d167bdb3d6",
+      "target": "code-mod-herald-e358a9c04fee",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-a3d167bdb3d6",
+      "target": "code-mod-herald-681a3161ed45",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-467c4e609449",
+      "target": "code-mod-herald-b7faf8293a82",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-467c4e609449",
+      "target": "code-mod-herald-f27185e19e45",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-64ef24ed1e56",
+      "target": "code-mod-herald-f2013e79e6a0",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-c324ac487c0d",
+      "target": "code-mod-herald-b7faf8293a82",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-c324ac487c0d",
+      "target": "code-mod-herald-f27185e19e45",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-c324ac487c0d",
+      "target": "code-mod-herald-f2013e79e6a0",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-e358a9c04fee",
+      "target": "code-mod-herald-f2013e79e6a0",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-2a77294eadd7",
+      "target": "code-mod-herald-cff36a9fa57b",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-2a77294eadd7",
+      "target": "code-mod-herald-f27185e19e45",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-2a77294eadd7",
+      "target": "code-mod-herald-f2013e79e6a0",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-2a77294eadd7",
+      "target": "code-mod-herald-681a3161ed45",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-27d6f17cd15b",
+      "target": "code-mod-herald-cff36a9fa57b",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-27d6f17cd15b",
+      "target": "code-mod-herald-f27185e19e45",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-27d6f17cd15b",
+      "target": "code-mod-herald-f2013e79e6a0",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-27d6f17cd15b",
+      "target": "code-mod-herald-e358a9c04fee",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-27d6f17cd15b",
+      "target": "code-mod-herald-681a3161ed45",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-ca659b8c90cf",
+      "target": "code-mod-herald-f27185e19e45",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-ca659b8c90cf",
+      "target": "code-mod-herald-681a3161ed45",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-7d7145535726",
+      "target": "code-mod-herald-cff36a9fa57b",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-7d7145535726",
+      "target": "code-mod-herald-f27185e19e45",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-7d7145535726",
+      "target": "code-mod-herald-64ef24ed1e56",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-7d7145535726",
+      "target": "code-mod-herald-f2013e79e6a0",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-7d7145535726",
+      "target": "code-mod-herald-e358a9c04fee",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-7d7145535726",
+      "target": "code-mod-herald-681a3161ed45",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-1b2a3bb402c7",
+      "target": "code-mod-herald-b7faf8293a82",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-1b2a3bb402c7",
+      "target": "code-mod-herald-f27185e19e45",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-1b2a3bb402c7",
+      "target": "code-mod-herald-f2013e79e6a0",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-mod-herald-1b2a3bb402c7",
+      "target": "code-mod-herald-c324ac487c0d",
+      "type": "depends_on",
+      "direction": "outbound",
+      "weight": 0.5
+    },
+    {
+      "source": "code-sym-herald-bb53053b89a1",
+      "target": "code-mod-herald-27d6f17cd15b",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-aa6eda0f8c2c",
+      "target": "code-mod-herald-e358a9c04fee",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-6d54d48a8ace",
+      "target": "code-mod-herald-2a77294eadd7",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-fb52d1f60460",
+      "target": "code-mod-herald-c324ac487c0d",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-2f40ecde1b62",
+      "target": "code-mod-herald-c58a1cb09a75",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-4c9b30c3deb0",
+      "target": "code-mod-herald-c58a1cb09a75",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-13ef3e73b28b",
+      "target": "code-mod-herald-c58a1cb09a75",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-ce834e90c1bd",
+      "target": "code-mod-herald-467c4e609449",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-5c59a69e1512",
+      "target": "code-mod-herald-467c4e609449",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-05116a24e374",
+      "target": "code-mod-herald-4e2c3a83dac7",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-47c95e14d342",
+      "target": "code-mod-herald-f27185e19e45",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-b71b67b8206e",
+      "target": "code-mod-herald-f27185e19e45",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-a301e313ed03",
+      "target": "code-mod-herald-f27185e19e45",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-589d34338f26",
+      "target": "code-mod-herald-f27185e19e45",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-32c785bffdd1",
+      "target": "code-mod-herald-f27185e19e45",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-527c31381ac2",
+      "target": "code-mod-herald-f27185e19e45",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-0bae3c22983b",
+      "target": "code-mod-herald-f27185e19e45",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-6784c029c7d0",
+      "target": "code-mod-herald-f27185e19e45",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-058eb15730a4",
+      "target": "code-mod-herald-a3d167bdb3d6",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-a7dc799f5e69",
+      "target": "code-mod-herald-a3d167bdb3d6",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-c78f48baed53",
+      "target": "code-mod-herald-a3d167bdb3d6",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-501cae7a44a5",
+      "target": "code-mod-herald-b7faf8293a82",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-f9229edcc902",
+      "target": "code-mod-herald-a3d167bdb3d6",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-62b1973c1ff5",
+      "target": "code-mod-herald-a3d167bdb3d6",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-b074c656a21a",
+      "target": "code-mod-herald-a3d167bdb3d6",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-1768fe6c1197",
+      "target": "code-mod-herald-b7faf8293a82",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-1d65ef25ca9e",
+      "target": "code-mod-herald-b7faf8293a82",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-3d01679f9679",
+      "target": "code-mod-herald-b7faf8293a82",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-be300cc7bbf5",
+      "target": "code-mod-herald-b7faf8293a82",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-f3084b9fc72a",
+      "target": "code-mod-herald-681a3161ed45",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-21e8bc9e1d10",
+      "target": "code-mod-herald-f2013e79e6a0",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-5664c58cfa6d",
+      "target": "code-mod-herald-cff36a9fa57b",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-8c8f1271b4ff",
+      "target": "code-mod-herald-d720fae0d812",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-ecaead06c69c",
+      "target": "code-mod-herald-d720fae0d812",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-a536419de59c",
+      "target": "code-mod-herald-8a245fc967eb",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-0465c966db3e",
+      "target": "code-mod-herald-cff36a9fa57b",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-b3d8fa7c8c72",
+      "target": "code-mod-herald-cff36a9fa57b",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-d686ccb844ba",
+      "target": "code-mod-herald-cff36a9fa57b",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-ca255a220d51",
+      "target": "code-mod-herald-8a245fc967eb",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    },
+    {
+      "source": "code-sym-herald-f5cecf15d748",
+      "target": "code-mod-herald-8a245fc967eb",
+      "type": "contains",
+      "direction": "outbound",
+      "weight": 0.6
+    }
+  ],
+  "layers": [
+    {
+      "id": "api",
+      "name": "Api",
+      "description": "Kindex-inferred api layer.",
+      "nodeIds": [
+        "code-mod-herald-27d6f17cd15b",
+        "code-mod-herald-52da92dcf97d",
+        "code-mod-herald-7d7145535726",
+        "code-mod-herald-8a245fc967eb",
+        "code-mod-herald-a3d167bdb3d6"
+      ]
+    },
+    {
+      "id": "core",
+      "name": "Core",
+      "description": "Kindex-inferred core layer.",
+      "nodeIds": [
+        "code-mod-herald-1b2a3bb402c7",
+        "code-mod-herald-2a77294eadd7",
+        "code-mod-herald-467c4e609449",
+        "code-mod-herald-4e2c3a83dac7",
+        "code-mod-herald-64ef24ed1e56",
+        "code-mod-herald-681a3161ed45",
+        "code-mod-herald-b7faf8293a82",
+        "code-mod-herald-c324ac487c0d",
+        "code-mod-herald-c58a1cb09a75",
+        "code-mod-herald-ca659b8c90cf",
+        "code-mod-herald-cff36a9fa57b",
+        "code-mod-herald-d720fae0d812",
+        "code-mod-herald-e358a9c04fee",
+        "code-mod-herald-f2013e79e6a0",
+        "code-mod-herald-f27185e19e45"
+      ]
+    },
+    {
+      "id": "domain",
+      "name": "Domain",
+      "description": "Kindex-inferred domain layer.",
+      "nodeIds": [
+        "code-sym-herald-0465c966db3e",
+        "code-sym-herald-05116a24e374",
+        "code-sym-herald-058eb15730a4",
+        "code-sym-herald-0bae3c22983b",
+        "code-sym-herald-13ef3e73b28b",
+        "code-sym-herald-1768fe6c1197",
+        "code-sym-herald-1d65ef25ca9e",
+        "code-sym-herald-21e8bc9e1d10",
+        "code-sym-herald-2f40ecde1b62",
+        "code-sym-herald-32c785bffdd1",
+        "code-sym-herald-3d01679f9679",
+        "code-sym-herald-47c95e14d342",
+        "code-sym-herald-4c9b30c3deb0",
+        "code-sym-herald-501cae7a44a5",
+        "code-sym-herald-527c31381ac2",
+        "code-sym-herald-5664c58cfa6d",
+        "code-sym-herald-589d34338f26",
+        "code-sym-herald-5c59a69e1512",
+        "code-sym-herald-62b1973c1ff5",
+        "code-sym-herald-6784c029c7d0",
+        "code-sym-herald-6d54d48a8ace",
+        "code-sym-herald-8c8f1271b4ff",
+        "code-sym-herald-a301e313ed03",
+        "code-sym-herald-a536419de59c",
+        "code-sym-herald-a7dc799f5e69",
+        "code-sym-herald-aa6eda0f8c2c",
+        "code-sym-herald-b074c656a21a",
+        "code-sym-herald-b3d8fa7c8c72",
+        "code-sym-herald-b71b67b8206e",
+        "code-sym-herald-bb53053b89a1",
+        "code-sym-herald-be300cc7bbf5",
+        "code-sym-herald-c78f48baed53",
+        "code-sym-herald-ca255a220d51",
+        "code-sym-herald-ce834e90c1bd",
+        "code-sym-herald-d686ccb844ba",
+        "code-sym-herald-ecaead06c69c",
+        "code-sym-herald-f3084b9fc72a",
+        "code-sym-herald-f5cecf15d748",
+        "code-sym-herald-f9229edcc902",
+        "code-sym-herald-fb52d1f60460"
+      ]
+    }
+  ],
+  "tour": [
+    {
+      "order": 1,
+      "title": "Api",
+      "description": "Review 5 node(s) in the Api layer.",
+      "nodeIds": [
+        "code-mod-herald-27d6f17cd15b",
+        "code-mod-herald-52da92dcf97d",
+        "code-mod-herald-7d7145535726",
+        "code-mod-herald-8a245fc967eb",
+        "code-mod-herald-a3d167bdb3d6"
+      ]
+    },
+    {
+      "order": 2,
+      "title": "Core",
+      "description": "Review 15 node(s) in the Core layer.",
+      "nodeIds": [
+        "code-mod-herald-1b2a3bb402c7",
+        "code-mod-herald-2a77294eadd7",
+        "code-mod-herald-467c4e609449",
+        "code-mod-herald-4e2c3a83dac7",
+        "code-mod-herald-64ef24ed1e56",
+        "code-mod-herald-681a3161ed45",
+        "code-mod-herald-b7faf8293a82",
+        "code-mod-herald-c324ac487c0d",
+        "code-mod-herald-c58a1cb09a75",
+        "code-mod-herald-ca659b8c90cf",
+        "code-mod-herald-cff36a9fa57b",
+        "code-mod-herald-d720fae0d812",
+        "code-mod-herald-e358a9c04fee",
+        "code-mod-herald-f2013e79e6a0",
+        "code-mod-herald-f27185e19e45"
+      ]
+    },
+    {
+      "order": 3,
+      "title": "Domain",
+      "description": "Review 40 node(s) in the Domain layer.",
+      "nodeIds": [
+        "code-sym-herald-0465c966db3e",
+        "code-sym-herald-05116a24e374",
+        "code-sym-herald-058eb15730a4",
+        "code-sym-herald-0bae3c22983b",
+        "code-sym-herald-13ef3e73b28b",
+        "code-sym-herald-1768fe6c1197",
+        "code-sym-herald-1d65ef25ca9e",
+        "code-sym-herald-21e8bc9e1d10",
+        "code-sym-herald-2f40ecde1b62",
+        "code-sym-herald-32c785bffdd1",
+        "code-sym-herald-3d01679f9679",
+        "code-sym-herald-47c95e14d342",
+        "code-sym-herald-4c9b30c3deb0",
+        "code-sym-herald-501cae7a44a5",
+        "code-sym-herald-527c31381ac2",
+        "code-sym-herald-5664c58cfa6d",
+        "code-sym-herald-589d34338f26",
+        "code-sym-herald-5c59a69e1512",
+        "code-sym-herald-62b1973c1ff5",
+        "code-sym-herald-6784c029c7d0",
+        "code-sym-herald-6d54d48a8ace",
+        "code-sym-herald-8c8f1271b4ff",
+        "code-sym-herald-a301e313ed03",
+        "code-sym-herald-a536419de59c",
+        "code-sym-herald-a7dc799f5e69"
+      ]
+    }
+  ]
+}
